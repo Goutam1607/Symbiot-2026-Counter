@@ -39,18 +39,18 @@ function MiniCountdown({ targetDate }) {
 
 // Descriptions for each event
 const EVENT_DETAILS = {
-  reg: { description: 'Check in at the registration desk with your team. Collect your ID cards, swag kits, and workspace assignments.', location: 'Main Entrance Hall' },
-  inaug: { description: 'Opening ceremony featuring keynote speakers, event rules overview, and the official hackathon kickoff.', location: 'Auditorium' },
-  design: { description: 'Phase I — Brainstorm, design your solution, create wireframes and technical architecture. Mentors available for guidance.', location: 'Hack Arena' },
-  lunch1: { description: 'Recharge with a freshly prepared meal. Network with other teams and mentors.', location: 'Dining Hall' },
-  tea1: { description: 'Quick refreshment break. Chai, coffee, and snacks to keep you energized.', location: 'Dining Hall' },
-  dinner: { description: 'Evening meal break. Take a breather before the intense night coding session.', location: 'Dining Hall' },
-  judge1: { description: 'Phase II evaluation — Present your progress to the judges. Get feedback and refine your project.', location: 'Judging Arena' },
-  latenight: { description: 'Midnight fuel! Hot tea and snacks to keep the night owls coding through the night.', location: 'Dining Hall' },
-  breakfast: { description: 'Start your final day with a hearty breakfast. Last chance to fuel up before the final sprint.', location: 'Dining Hall' },
-  final: { description: 'Final evaluation — Present your completed project to the panel of judges. Demo your working prototype.', location: 'Judging Arena' },
-  lunch2: { description: 'Post-judgement lunch. Relax while the judges deliberate on the results.', location: 'Dining Hall' },
-  vale: { description: 'Closing ceremony — Winner announcements, prize distribution, certificates, and farewell. Group photo!', location: 'Auditorium' },
+  reg: { description: 'Check in at the registration desk with your team. Collect your ID cards, swag kits, and workspace assignments.', location: 'H KempeGowda Sports Complex' },
+  inaug: { description: 'Opening ceremony featuring keynote speakers, event rules overview, and the official hackathon kickoff.', location: 'H KempeGowda Sports Complex' },
+  design: { description: 'Phase I — Brainstorm, design your solution, create wireframes and technical architecture. Mentors available for guidance.', location: 'H KempeGowda Sports Complex' },
+  lunch1: { description: 'Recharge with a freshly prepared meal. Network with other teams and mentors.', location: 'H KempeGowda Sports Complex' },
+  tea1: { description: 'Quick refreshment break. Chai, coffee, and snacks to keep you energized.', location: 'H KempeGowda Sports Complex' },
+  dinner: { description: 'Evening meal break. Take a breather before the intense night coding session.', location: 'H KempeGowda Sports Complex' },
+  judge1: { description: 'Phase II evaluation — Present your progress to the judges. Get feedback and refine your project.', location: 'H KempeGowda Sports Complex' },
+  latenight: { description: 'Midnight fuel! Hot tea and snacks to keep the night owls coding through the night.', location: 'H KempeGowda Sports Complex' },
+  breakfast: { description: 'Start your final day with a hearty breakfast. Last chance to fuel up before the final sprint.', location: 'H KempeGowda Sports Complex' },
+  final: { description: 'Final evaluation — Present your completed project to the panel of judges. Demo your working prototype.', location: 'H KempeGowda Sports Complex' },
+  lunch2: { description: 'Post-judgement lunch. Relax while the judges deliberate on the results.', location: 'H KempeGowda Sports Complex' },
+  vale: { description: 'Closing ceremony — Winner announcements, prize distribution, certificates, and farewell. Group photo!', location: 'H KempeGowda Sports Complex' },
 };
 
 const STATUS_STYLES = {
@@ -112,7 +112,7 @@ function EventCard({ event, status, index }) {
         {/* Hover glow overlay */}
         <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300
                         bg-gradient-to-br from-primary-500/[0.04] to-transparent pointer-events-none" />
-        
+
         {/* Current event animated border */}
         {isCurrent && (
           <motion.div
@@ -140,10 +140,10 @@ function EventCard({ event, status, index }) {
             ${isCurrent
               ? 'bg-primary-500/15 shadow-[0_0_15px_rgba(0,194,194,0.15)]'
               : isNext
-              ? 'bg-primary-500/10'
-              : isPast
-              ? 'bg-gray-800/30'
-              : 'bg-white/[0.04]'
+                ? 'bg-primary-500/10'
+                : isPast
+                  ? 'bg-gray-800/30'
+                  : 'bg-white/[0.04]'
             }
           `}>
             {event.emoji}
