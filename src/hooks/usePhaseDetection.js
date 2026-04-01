@@ -17,8 +17,8 @@ export function usePhaseDetection(isTimerRunning, startedAt, elapsed) {
     }
 
     // Calculate "hackathon time" — what time it would be in the hackathon
-    // Hackathon starts at 8:30 AM on Day 1
-    const hackathonStartTime = new Date('2026-04-24T08:30:00').getTime();
+    // Hackathon starts at 9:30 AM on Day 1 (Registration not included)
+    const hackathonStartTime = new Date('2026-04-24T09:30:00').getTime();
     const currentHackathonTime = hackathonStartTime + (elapsed * 1000);
     const now = currentHackathonTime;
 
