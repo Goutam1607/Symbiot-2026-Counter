@@ -156,7 +156,7 @@ export default function App() {
           >
             <Header />
 
-            <div className="w-full max-w-2xl">
+            <div className="w-full max-w-5xl">
               <VoiceActivation
                 decibel={audio.decibel}
                 isListening={audio.isListening}

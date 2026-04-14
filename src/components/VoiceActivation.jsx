@@ -142,28 +142,28 @@ export default function VoiceActivation({
 
   return (
     <motion.div
-      className="flex flex-col items-center py-6 md:py-10"
+      className="flex flex-col items-center py-2 md:py-4"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
       {/* Title */}
-      <div className="flex items-center gap-2 mb-6">
-        <span className="text-lg md:text-xl font-bold dark:text-white text-gray-800">
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-lg md:text-xl lg:text-2xl font-bold dark:text-white text-gray-800">
           🎤 Crowd Activation Mode
         </span>
       </div>
 
       {/* Progress dots */}
-      <div className="flex gap-3 mb-8">
+      <div className="flex gap-4 mb-6">
         {WORDS.map((word, i) => (
           <motion.div
             key={word}
             className={`
-              flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold
+              flex items-center gap-3 px-6 py-3 rounded-2xl text-base font-bold
               transition-all duration-300
               ${locked[i]
-                ? 'bg-gradient-to-r from-primary-500/20 to-primary-600/20 border border-primary-500/40'
+                ? 'bg-gradient-to-r from-primary-500/20 to-primary-600/20 border border-primary-500/40 shadow-[0_0_20px_rgba(6,182,212,0.1)]'
                 : i === currentIndex
                 ? 'glass border-primary-500/30'
                 : 'glass opacity-40'
@@ -172,9 +172,9 @@ export default function VoiceActivation({
             animate={locked[i] ? { scale: [1, 1.1, 1] } : {}}
             transition={{ duration: 0.3 }}
           >
-            <span className={`w-2 h-2 rounded-full ${locked[i] ? 'bg-primary-500' : 'bg-gray-500'}`} />
-            <span style={{ color: locked[i] ? WORD_COLORS[word] : undefined }}>{word}</span>
-            {locked[i] && <span>✓</span>}
+            <span className={`w-3 h-3 rounded-full ${locked[i] ? 'bg-primary-500' : 'bg-gray-500'}`} />
+            <span style={{ color: locked[i] ? WORD_COLORS[word] : undefined }} className="tracking-widest">{word}</span>
+            {locked[i] && <span className="text-primary-500">✓</span>}
           </motion.div>
         ))}
       </div>
@@ -183,9 +183,9 @@ export default function VoiceActivation({
       {!isListening ? (
         <motion.button
           onClick={onStartListening}
-          className="px-8 py-4 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 
-                     text-white font-bold text-lg shadow-glow hover:shadow-glow-lg
-                     transition-all duration-300"
+          className="px-12 py-6 rounded-3xl bg-gradient-to-r from-primary-500 to-primary-600 
+                     text-white font-bold text-2xl shadow-glow hover:shadow-glow-xl
+                     transition-all duration-300 border border-white/10"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -193,18 +193,14 @@ export default function VoiceActivation({
         </motion.button>
       ) : (
         <div className="flex flex-col items-center">
-          <motion.p
-            className="text-sm dark:text-gray-400 text-gray-500 mb-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
+          <p className="text-base font-medium dark:text-gray-500 text-gray-400 mb-2 tracking-widest uppercase">
             Scream together:
-          </motion.p>
+          </p>
           
           <AnimatePresence mode="wait">
             <motion.div
               key={WORDS[currentIndex]}
-              className="text-6xl md:text-8xl lg:text-9xl font-black text-center"
+              className="text-8xl md:text-[10rem] lg:text-[12rem] font-black text-center leading-none"
               style={{ color: WORD_COLORS[WORDS[currentIndex]] }}
               initial={{ scale: 0.5, opacity: 0, rotateX: 90 }}
               animate={{ scale: 1, opacity: 1, rotateX: 0 }}
@@ -216,19 +212,19 @@ export default function VoiceActivation({
           </AnimatePresence>
 
           {/* Hold progress bar */}
-          <div className="w-64 md:w-80 h-2 rounded-full bg-gray-800 mt-6 overflow-hidden">
+          <div className="w-full max-w-2xl h-3 rounded-full bg-gray-800/50 mt-6 overflow-hidden border border-white/5">
             <motion.div
               className="h-full rounded-full"
               style={{
                 background: `linear-gradient(90deg, ${WORD_COLORS[WORDS[currentIndex]]}, ${WORD_COLORS[WORDS[currentIndex]]}dd)`,
                 width: `${holdProgress * 100}%`,
-                boxShadow: holdProgress > 0.5 ? `0 0 20px ${WORD_COLORS[WORDS[currentIndex]]}80` : 'none',
+                boxShadow: holdProgress > 0.5 ? `0 0 30px ${WORD_COLORS[WORDS[currentIndex]]}` : 'none',
               }}
               transition={{ duration: 0.1 }}
             />
           </div>
-          <p className="mt-2 text-xs dark:text-gray-500 text-gray-400">
-            {holdProgress > 0 ? 'Keep going!' : 'Get louder!'}
+          <p className="mt-2 text-xs font-bold tracking-widest dark:text-gray-400 text-gray-500 uppercase">
+            {holdProgress > 0 ? 'KEEP GOING!' : 'GET LOUDER!'}
           </p>
         </div>
       )}

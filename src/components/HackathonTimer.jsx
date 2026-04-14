@@ -115,7 +115,7 @@ export default function HackathonTimer({
 
       {/* Main time display — clean, no animations on digits */}
       <div className="flex flex-col items-center justify-center w-full max-w-full">
-        <div className="flex items-baseline justify-center w-full">
+        <div className="flex items-center justify-center w-full">
           {/* Hours */}
           <span
             className="font-extrabold tabular-nums leading-none transition-all duration-300"
@@ -131,10 +131,11 @@ export default function HackathonTimer({
 
           {/* Colon 1 */}
           <motion.span
-            className="font-extrabold mx-[1%] self-center transition-all duration-300"
+            className="font-extrabold mx-[1%] transition-all duration-300 flex items-center justify-center mb-[1%]"
             style={{
               color: colonColor,
               fontSize: `clamp(${3.5 * zoom}rem, ${10 * zoom}cqw, ${25 * zoom}rem)`,
+              lineHeight: 1,
             }}
             animate={isRunning ? { opacity: [1, 0.2, 1] } : {}}
             transition={{ duration: 1, repeat: Infinity }}
@@ -157,10 +158,11 @@ export default function HackathonTimer({
 
           {/* Colon 2 */}
           <motion.span
-            className="font-extrabold mx-[1%] self-center transition-all duration-300"
+            className="font-extrabold mx-[1%] transition-all duration-300 flex items-center justify-center mb-[1%]"
             style={{
               color: colonColor,
               fontSize: `clamp(${3.5 * zoom}rem, ${10 * zoom}cqw, ${25 * zoom}rem)`,
+              lineHeight: 1,
             }}
             animate={isRunning ? { opacity: [1, 0.2, 1] } : {}}
             transition={{ duration: 1, repeat: Infinity, delay: 0.5 }}

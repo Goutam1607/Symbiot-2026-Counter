@@ -26,14 +26,14 @@ export default function DecibelMeter({ decibel, frequencyData, isListening }) {
 
   return (
     <motion.div
-      className="flex flex-col items-center py-4"
+      className="flex flex-col items-center py-2"
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.4 }}
     >
       {/* Radial meter */}
-      <div className="relative w-32 h-32 md:w-40 md:h-40">
+      <div className="relative w-40 h-40 md:w-56 md:h-56">
         <svg viewBox="0 0 120 120" className="w-full h-full">
           {/* Background arc */}
           <path
@@ -56,24 +56,23 @@ export default function DecibelMeter({ decibel, frequencyData, isListening }) {
             style={{ filter: `drop-shadow(0 0 8px ${meterColor}60)` }}
           />
           
-          {/* Center text */}
           <text
             x="60"
             y="55"
             textAnchor="middle"
             className="fill-current dark:text-white text-gray-800"
-            style={{ fontSize: '22px', fontWeight: 900, fontFamily: 'Inter' }}
+            style={{ fontSize: '28px', fontWeight: 900, fontFamily: 'Inter' }}
           >
             {Math.round(decibel)}
           </text>
           <text
             x="60"
-            y="72"
+            y="75"
             textAnchor="middle"
             className="fill-current dark:text-gray-500 text-gray-400"
-            style={{ fontSize: '8px', fontWeight: 600, letterSpacing: '0.1em' }}
+            style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.2em' }}
           >
-            LEVEL
+            DECIBELS
           </text>
         </svg>
 
@@ -91,17 +90,17 @@ export default function DecibelMeter({ decibel, frequencyData, isListening }) {
       </div>
 
       {/* Waveform bars */}
-      <div className="flex items-end justify-center gap-[2px] h-12 md:h-16 mt-2">
+      <div className="flex items-end justify-center gap-[3px] h-12 md:h-20 mt-2">
         {bars.map((value, i) => (
           <motion.div
             key={i}
             className="rounded-full"
             style={{
-              width: window.innerWidth < 768 ? 3 : 4,
+              width: window.innerWidth < 768 ? 4 : 6,
               background: `linear-gradient(180deg, ${meterColor} 0%, ${meterColor}40 100%)`,
-              boxShadow: value > 0.5 ? `0 0 6px ${meterColor}40` : 'none',
+              boxShadow: value > 0.5 ? `0 0 10px ${meterColor}40` : 'none',
             }}
-            animate={{ height: Math.max(2, value * (window.innerWidth < 768 ? 48 : 64)) }}
+            animate={{ height: Math.max(4, value * (window.innerWidth < 768 ? 64 : 96)) }}
             transition={{ duration: 0.08 }}
           />
         ))}
