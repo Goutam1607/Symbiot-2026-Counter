@@ -72,18 +72,20 @@ export default function App() {
     }
   }, [mainTimer.seconds, mainTimer.isRunning, sounds]);
 
-  // --- Auto-initialize phase timer for default phase on first load ---
-  const didInitPhaseTimer = useRef(false);
+  // --- Auto-initialize and start phase timer when phase changes ---
+  const prevPhaseIdRef = useRef(null);
   useEffect(() => {
-    if (!didInitPhaseTimer.current && phaseDetection.currentPhase) {
-      didInitPhaseTimer.current = true;
+    const currentPhaseId = phaseDetection.currentPhase?.id;
+    if (currentPhaseId && currentPhaseId !== prevPhaseIdRef.current) {
+      prevPhaseIdRef.current = currentPhaseId;
       const dur = getEventDuration(phaseDetection.currentPhase);
       const h = Math.floor(dur / 3600);
       const m = Math.floor((dur % 3600) / 60);
       const s = dur % 60;
       phaseTimer.setTime(h, m, s);
+      phaseTimer.start();
     }
-  }, [phaseDetection.currentPhase]);
+  }, [phaseDetection.currentPhase, phaseTimer]);
 
   // --- Handlers ---
 
