@@ -6,6 +6,12 @@ export default function AdminPanel({
   isRunning,
   hours, minutes, seconds,
   onStart, onPause, onReset, onSetTime,
+  
+  // Phase Timer Props
+  phaseTimerRunning,
+  phaseHours, phaseMinutes, phaseSeconds,
+  onPhaseStart, onPhasePause, onPhaseReset, onPhaseSetTime,
+
   threshold, onSetThreshold,
   onSkipVoice,
   overridePhaseId, onSetOverridePhase,
@@ -131,6 +137,72 @@ export default function AdminPanel({
                         className="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all
                                    dark:bg-white/5 dark:text-gray-400 dark:border-white/[0.06] dark:hover:border-cyan-500/20 dark:hover:text-cyan-400
                                    bg-gray-50 text-gray-500 border border-gray-200 hover:border-cyan-300 hover:text-cyan-600"
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </Section>
+
+                {/* Individual Phase Timer */}
+                <Section title="⏳ Individual Phase Timer">
+                  <p className="text-[10px] dark:text-gray-500 text-gray-400 mb-3">
+                    Independent countdown for the current phase.
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    <button
+                      onClick={phaseTimerRunning ? onPhasePause : onPhaseStart}
+                      className={`py-2 rounded-xl text-[10px] font-bold transition-all ${
+                        phaseTimerRunning
+                          ? 'dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 bg-amber-50 text-amber-600 border border-amber-200'
+                          : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white'
+                      }`}
+                    >
+                      {phaseTimerRunning ? '⏸ Pause' : '▶ Start'}
+                    </button>
+                    <button
+                      onClick={onPhaseReset}
+                      className="py-2 rounded-xl text-[10px] font-bold transition-all
+                                 dark:bg-white/5 dark:text-gray-400 dark:border-white/10
+                                 bg-gray-50 text-gray-500 border border-gray-200"
+                    >
+                      ↺ Reset
+                    </button>
+                    <button
+                      onClick={() => {
+                        const h = parseInt(prompt('Phase Hours:', phaseHours));
+                        const m = parseInt(prompt('Phase Minutes:', phaseMinutes));
+                        const s = parseInt(prompt('Phase Seconds:', phaseSeconds));
+                        if (!isNaN(h) && !isNaN(m) && !isNaN(s)) onPhaseSetTime(h, m, s);
+                      }}
+                      className="py-2 rounded-xl text-[10px] font-bold transition-all
+                                 dark:bg-white/5 dark:text-gray-400 dark:border-white/10
+                                 bg-gray-50 text-gray-500 border border-gray-200"
+                    >
+                      ✏️ Edit
+                    </button>
+                  </div>
+
+                  <div className="flex gap-1.5 flex-wrap">
+                    {[
+                      { label: '-5m', delta: -300 },
+                      { label: '+1m', delta: 60 },
+                      { label: '+5m', delta: 300 },
+                      { label: '+15m', delta: 900 },
+                      { label: '+30m', delta: 1800 },
+                    ].map(({ label, delta }) => (
+                      <button
+                        key={label}
+                        onClick={() => {
+                          const total = phaseHours * 3600 + phaseMinutes * 60 + phaseSeconds + delta;
+                          const h = Math.floor(Math.max(0, total) / 3600);
+                          const m = Math.floor((Math.max(0, total) % 3600) / 60);
+                          const s = Math.max(0, total) % 60;
+                          onPhaseSetTime(h, m, s);
+                        }}
+                        className="px-2 py-1 rounded-lg text-[9px] font-bold transition-all
+                                   dark:bg-white/5 dark:text-gray-400 dark:border-white/[0.06]
+                                   bg-gray-50 text-gray-500 border border-gray-200"
                       >
                         {label}
                       </button>

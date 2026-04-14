@@ -15,52 +15,83 @@ import { useHackathonTimer } from './hooks/useCountdown';
 import { usePhaseDetection } from './hooks/usePhaseDetection';
 import { useAudioAnalyser } from './hooks/useAudioAnalyser';
 import { useSoundEffects } from './hooks/useSoundEffects';
+import { SCHEDULE } from './utils/schedule';
 
 // App states
 const PHASE_VOICE = 'voice';
 const PHASE_DASHBOARD = 'dashboard';
 
+// Helper: get duration in seconds for a schedule event
+function getEventDuration(event) {
+  const allEvents = SCHEDULE.flatMap(d => d.events);
+  const idx = allEvents.findIndex(e => e.id === event.id);
+  const startMs = new Date(event.dateTime).getTime();
+  const endMs = event.endTime
+    ? new Date(event.endTime).getTime()
+    : (allEvents[idx + 1]
+        ? new Date(allEvents[idx + 1].dateTime).getTime()
+        : startMs + 3600000);
+  return Math.floor((endMs - startMs) / 1000);
+}
+
 export default function App() {
   const [phase, setPhase] = useState(PHASE_VOICE);
   const [threshold, setThreshold] = useState(80);
-  const [overridePhaseId, setOverridePhaseId] = useState('design');
+  const [overridePhaseId, setOverridePhaseId] = useState(null);
 
   // Resize Panel State
-  const [scheduleWidth, setScheduleWidth] = useState(35); // percentage
+  const [scheduleWidth, setScheduleWidth] = useState(35);
   const [isResizing, setIsResizing] = useState(false);
   const [lastWidth, setLastWidth] = useState(35);
 
-  // Timer Zoom State
+  // Zoom State
   const [timerZoom, setTimerZoom] = useState(1.75);
   const [scheduleZoom, setScheduleZoom] = useState(1);
 
-  // Hackathon Timer
-  const timer = useHackathonTimer();
+  // Main 24h Timer
+  const mainTimer = useHackathonTimer();
+
+  // Independent Phase Timer (for "Ends in" countdown)
+  const phaseTimer = useHackathonTimer();
 
   // Phase detection
-  const phaseDetection = usePhaseDetection(timer.isRunning, timer.startedAt, timer.elapsed);
+  const phaseDetection = usePhaseDetection(
+    mainTimer.isRunning, mainTimer.startedAt, mainTimer.elapsed, overridePhaseId
+  );
 
-  // Audio
+  // Audio & Sounds
   const audio = useAudioAnalyser();
-
-  // Sounds
   const sounds = useSoundEffects();
 
-  // Tick sound
-  const prevSecRef = useRef(timer.seconds);
+  // Tick sound for main timer only
+  const prevSecRef = useRef(mainTimer.seconds);
   useEffect(() => {
-    if (prevSecRef.current !== timer.seconds && timer.isRunning) {
+    if (prevSecRef.current !== mainTimer.seconds && mainTimer.isRunning) {
       sounds.tick();
-      prevSecRef.current = timer.seconds;
+      prevSecRef.current = mainTimer.seconds;
     }
-  }, [timer.seconds, timer.isRunning, sounds]);
+  }, [mainTimer.seconds, mainTimer.isRunning, sounds]);
 
-  // Voice activation complete
+  // --- Auto-initialize phase timer for default phase on first load ---
+  const didInitPhaseTimer = useRef(false);
+  useEffect(() => {
+    if (!didInitPhaseTimer.current && phaseDetection.currentPhase) {
+      didInitPhaseTimer.current = true;
+      const dur = getEventDuration(phaseDetection.currentPhase);
+      const h = Math.floor(dur / 3600);
+      const m = Math.floor((dur % 3600) / 60);
+      const s = dur % 60;
+      phaseTimer.setTime(h, m, s);
+    }
+  }, [phaseDetection.currentPhase]);
+
+  // --- Handlers ---
+
   const handleVoiceComplete = useCallback(() => {
     setPhase(PHASE_DASHBOARD);
-    timer.start();
+    mainTimer.start();
     setTimeout(() => audio.stop(), 3000);
-  }, [audio, timer]);
+  }, [audio, mainTimer]);
 
   const handleStartListening = useCallback(() => {
     audio.start();
@@ -68,18 +99,43 @@ export default function App() {
 
   const handleSkipVoice = useCallback(() => {
     setPhase(PHASE_DASHBOARD);
-    timer.start();
+    mainTimer.start();
     audio.stop();
-  }, [audio, timer]);
+  }, [audio, mainTimer]);
 
   const handleReset = useCallback(() => {
     setPhase(PHASE_VOICE);
-    timer.reset();
+    mainTimer.reset();
+    phaseTimer.reset();
     audio.stop();
     setOverridePhaseId(null);
-  }, [timer, audio]);
+  }, [mainTimer, phaseTimer, audio]);
 
-  // Resizing Logic
+  const handleSetTime = useCallback((h, m, s) => {
+    mainTimer.setTime(h, m, s);
+  }, [mainTimer]);
+
+  // When a phase is selected from Admin Panel:
+  // → highlight that phase, set the "Ends in" timer to its duration, start it immediately
+  const handleSetOverridePhase = useCallback((id) => {
+    setOverridePhaseId(id);
+
+    if (id) {
+      const allEvents = SCHEDULE.flatMap(d => d.events);
+      const event = allEvents.find(e => e.id === id);
+      if (event) {
+        const dur = getEventDuration(event);
+        const h = Math.floor(dur / 3600);
+        const m = Math.floor((dur % 3600) / 60);
+        const s = dur % 60;
+        phaseTimer.setTime(h, m, s);
+        phaseTimer.start();
+      }
+    }
+  }, [phaseTimer]);
+
+  // --- Resize Logic ---
+
   const handleMouseDown = useCallback((e) => {
     e.preventDefault();
     setIsResizing(true);
@@ -92,8 +148,6 @@ export default function App() {
       requestAnimationFrame(() => {
         const width = 100 - (e.clientX / window.innerWidth) * 100;
         const constrainedWidth = Math.max(0, Math.min(50, width));
-
-        // Magnetic snap to collapse
         if (constrainedWidth < 5) {
           setScheduleWidth(0);
         } else {
@@ -125,6 +179,8 @@ export default function App() {
       setScheduleWidth(0);
     }
   }, [scheduleWidth, lastWidth]);
+
+  // --- Render ---
 
   return (
     <div className="h-screen w-screen overflow-hidden relative transition-colors duration-500"
@@ -206,54 +262,36 @@ export default function App() {
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 100 }}
           >
-            {/* Derived Phase Info for sync */}
-            {(() => {
-              const all = phaseDetection.allEvents;
-              const effectiveCurrent = overridePhaseId 
-                ? all.find(e => e.id === overridePhaseId)
-                : phaseDetection.currentPhase;
-                
-              const effectiveNext = overridePhaseId
-                ? all[all.findIndex(e => e.id === overridePhaseId) + 1]
-                : phaseDetection.nextPhase;
-                
-              const effectivePhaseInfo = {
-                currentPhase: effectiveCurrent,
-                nextPhase: effectiveNext,
-                phaseTimeRemaining: phaseDetection.phaseTimeRemaining
-              };
+            {/* Subtle top branding */}
+            <div className="flex items-center gap-3 px-6 pt-4">
+              <img src="/logo.png" alt="SYMBIOT" className="w-8 h-8 object-contain" />
+              <div>
+                <span style={{ fontFamily: "'Vampire Wars', sans-serif" }} className="text-xl md:text-2xl dark:text-cyan-400 text-cyan-700 tracking-wider">SYMBIOT</span>
+                <span className="text-sm font-bold dark:text-cyan-400 text-cyan-700 ml-1">2026</span>
+                <span className="text-[10px] dark:text-gray-500 text-gray-400 ml-2 tracking-widest uppercase">Mission Control</span>
+              </div>
+            </div>
 
-              return (
-                <>
-                  {/* Subtle top branding */}
-                  <div className="flex items-center gap-3 px-6 pt-4">
-                    <img src="/logo.png" alt="SYMBIOT" className="w-8 h-8 object-contain" />
-                    <div>
-                      <span style={{ fontFamily: "'Vampire Wars', sans-serif" }} className="text-xl md:text-2xl dark:text-cyan-400 text-cyan-700 tracking-wider">SYMBIOT</span>
-                      <span className="text-sm font-bold dark:text-cyan-400 text-cyan-700 ml-1">2026</span>
-                      <span className="text-[10px] dark:text-gray-500 text-gray-400 ml-2 tracking-widest uppercase">Mission Control</span>
-                    </div>
-                  </div>
-
-                  {/* Timer */}
-                  <div className="flex-1 timer-container">
-                    <HackathonTimer
-                      hours={timer.hours}
-                      minutes={timer.minutes}
-                      seconds={timer.seconds}
-                      isRunning={timer.isRunning}
-                      progress={timer.progress}
-                      onStart={timer.start}
-                      onPause={timer.pause}
-                      onReset={timer.reset}
-                      onSetTime={timer.setTime}
-                      zoom={timerZoom}
-                      phaseInfo={effectivePhaseInfo}
-                    />
-                  </div>
-                </>
-              );
-            })()}
+            {/* Timer */}
+            <div className="flex-1 timer-container">
+              <HackathonTimer
+                hours={mainTimer.hours}
+                minutes={mainTimer.minutes}
+                seconds={mainTimer.seconds}
+                isRunning={mainTimer.isRunning}
+                progress={mainTimer.progress}
+                onStart={mainTimer.start}
+                onPause={mainTimer.pause}
+                onReset={mainTimer.reset}
+                onSetTime={mainTimer.setTime}
+                zoom={timerZoom}
+                phaseInfo={{
+                  currentPhase: phaseDetection.currentPhase,
+                  nextPhase: phaseDetection.nextPhase,
+                  phaseTimeRemaining: phaseTimer.remainingSeconds
+                }}
+              />
+            </div>
 
             {/* Footer */}
             <div className="px-6 pb-3 text-center lg:text-left">
@@ -263,13 +301,13 @@ export default function App() {
             </div>
           </motion.div>
 
-          {/* Resizable Divider (shown only on desktop) */}
+          {/* Resizable Divider (desktop) */}
           <div
             className={`hidden lg:block resize-divider ${isResizing ? 'is-resizing' : ''}`}
             onMouseDown={handleMouseDown}
           />
 
-          {/* Mobile Divider (hidden when resizing) */}
+          {/* Mobile Divider */}
           <div className="lg:hidden h-[1px] dark:bg-gradient-to-r dark:from-transparent dark:via-cyan-500/15 dark:to-transparent
                           bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
 
@@ -289,19 +327,15 @@ export default function App() {
             transition={{ delay: 0.4, type: 'spring', stiffness: 100 }}
           >
             <LiveScheduleFlow
-              currentPhase={overridePhaseId 
-                ? phaseDetection.allEvents.find(e => e.id === overridePhaseId)
-                : phaseDetection.currentPhase}
-              nextPhase={overridePhaseId
-                ? phaseDetection.allEvents[phaseDetection.allEvents.findIndex(e => e.id === overridePhaseId) + 1]
-                : phaseDetection.nextPhase}
-              phaseTimeRemaining={phaseDetection.phaseTimeRemaining}
+              currentPhase={phaseDetection.currentPhase}
+              nextPhase={phaseDetection.nextPhase}
+              phaseTimeRemaining={phaseTimer.remainingSeconds}
               overridePhaseId={overridePhaseId}
               zoom={scheduleZoom}
             />
           </motion.div>
 
-          {/* Collapse/Expand Toggle Button (only when hidden) */}
+          {/* Collapse/Expand Toggle */}
           <AnimatePresence>
             {scheduleWidth === 0 && (
               <motion.button
@@ -318,7 +352,6 @@ export default function App() {
             )}
           </AnimatePresence>
 
-          {/* Small fixed toggle even when visible (optional but nice) */}
           {scheduleWidth > 0 && (
             <button
               onClick={toggleSchedule}
@@ -335,19 +368,29 @@ export default function App() {
 
       {/* Admin Panel */}
       <AdminPanel
-        isRunning={timer.isRunning}
-        hours={timer.hours}
-        minutes={timer.minutes}
-        seconds={timer.seconds}
-        onStart={timer.start}
-        onPause={timer.pause}
+        isRunning={mainTimer.isRunning}
+        hours={mainTimer.hours}
+        minutes={mainTimer.minutes}
+        seconds={mainTimer.seconds}
+        onStart={mainTimer.start}
+        onPause={mainTimer.pause}
         onReset={handleReset}
-        onSetTime={timer.setTime}
+        onSetTime={handleSetTime}
+
+        phaseTimerRunning={phaseTimer.isRunning}
+        phaseHours={phaseTimer.hours}
+        phaseMinutes={phaseTimer.minutes}
+        phaseSeconds={phaseTimer.seconds}
+        onPhaseStart={phaseTimer.start}
+        onPhasePause={phaseTimer.pause}
+        onPhaseReset={phaseTimer.reset}
+        onPhaseSetTime={phaseTimer.setTime}
+
         threshold={threshold}
         onSetThreshold={setThreshold}
         onSkipVoice={() => setPhase(PHASE_DASHBOARD)}
         overridePhaseId={overridePhaseId}
-        onSetOverridePhase={setOverridePhaseId}
+        onSetOverridePhase={handleSetOverridePhase}
         timerZoom={timerZoom}
         onSetTimerZoom={setTimerZoom}
         scheduleZoom={scheduleZoom}
