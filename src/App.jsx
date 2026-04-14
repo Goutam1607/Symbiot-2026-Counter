@@ -23,7 +23,7 @@ const PHASE_DASHBOARD = 'dashboard';
 export default function App() {
   const [phase, setPhase] = useState(PHASE_VOICE);
   const [threshold, setThreshold] = useState(80);
-  const [overridePhaseId, setOverridePhaseId] = useState(null);
+  const [overridePhaseId, setOverridePhaseId] = useState('design');
 
   // Resize Panel State
   const [scheduleWidth, setScheduleWidth] = useState(35); // percentage
@@ -31,7 +31,7 @@ export default function App() {
   const [lastWidth, setLastWidth] = useState(35);
 
   // Timer Zoom State
-  const [timerZoom, setTimerZoom] = useState(1);
+  const [timerZoom, setTimerZoom] = useState(1.75);
 
   // Hackathon Timer
   const timer = useHackathonTimer();
@@ -205,38 +205,54 @@ export default function App() {
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 100 }}
           >
-            {/* Subtle top branding */}
-            <div className="flex items-center gap-3 px-6 pt-4">
-              <img src="/logo.png" alt="SYMBIOT" className="w-8 h-8 object-contain" />
-              <div>
-                <span style={{ fontFamily: "'Vampire Wars', sans-serif" }} className="text-xl md:text-2xl dark:text-cyan-400 text-cyan-700 tracking-wider">SYMBIOT</span>
-                <span className="text-sm font-bold dark:text-cyan-400 text-cyan-700 ml-1">2026</span>
-                <span className="text-[10px] dark:text-gray-500 text-gray-400 ml-2 tracking-widest uppercase">Mission Control</span>
-              </div>
-            </div>
+            {/* Derived Phase Info for sync */}
+            {(() => {
+              const all = phaseDetection.allEvents;
+              const effectiveCurrent = overridePhaseId 
+                ? all.find(e => e.id === overridePhaseId)
+                : phaseDetection.currentPhase;
+                
+              const effectiveNext = overridePhaseId
+                ? all[all.findIndex(e => e.id === overridePhaseId) + 1]
+                : phaseDetection.nextPhase;
+                
+              const effectivePhaseInfo = {
+                currentPhase: effectiveCurrent,
+                nextPhase: effectiveNext,
+                phaseTimeRemaining: phaseDetection.phaseTimeRemaining
+              };
 
-            {/* Timer */}
-            <div className="flex-1 timer-container">
-              <HackathonTimer
-                hours={timer.hours}
-                minutes={timer.minutes}
-                seconds={timer.seconds}
-                isRunning={timer.isRunning}
-                progress={timer.progress}
-                onStart={timer.start}
-                onPause={timer.pause}
-                onReset={timer.reset}
-                onSetTime={timer.setTime}
-                zoom={timerZoom}
-                phaseInfo={{
-                  currentPhase: overridePhaseId
-                    ? phaseDetection.allEvents.find(e => e.id === overridePhaseId)
-                    : phaseDetection.currentPhase,
-                  nextPhase: phaseDetection.nextPhase,
-                  phaseTimeRemaining: phaseDetection.phaseTimeRemaining,
-                }}
-              />
-            </div>
+              return (
+                <>
+                  {/* Subtle top branding */}
+                  <div className="flex items-center gap-3 px-6 pt-4">
+                    <img src="/logo.png" alt="SYMBIOT" className="w-8 h-8 object-contain" />
+                    <div>
+                      <span style={{ fontFamily: "'Vampire Wars', sans-serif" }} className="text-xl md:text-2xl dark:text-cyan-400 text-cyan-700 tracking-wider">SYMBIOT</span>
+                      <span className="text-sm font-bold dark:text-cyan-400 text-cyan-700 ml-1">2026</span>
+                      <span className="text-[10px] dark:text-gray-500 text-gray-400 ml-2 tracking-widest uppercase">Mission Control</span>
+                    </div>
+                  </div>
+
+                  {/* Timer */}
+                  <div className="flex-1 timer-container">
+                    <HackathonTimer
+                      hours={timer.hours}
+                      minutes={timer.minutes}
+                      seconds={timer.seconds}
+                      isRunning={timer.isRunning}
+                      progress={timer.progress}
+                      onStart={timer.start}
+                      onPause={timer.pause}
+                      onReset={timer.reset}
+                      onSetTime={timer.setTime}
+                      zoom={timerZoom}
+                      phaseInfo={effectivePhaseInfo}
+                    />
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Footer */}
             <div className="px-6 pb-3 text-center lg:text-left">
@@ -272,8 +288,12 @@ export default function App() {
             transition={{ delay: 0.4, type: 'spring', stiffness: 100 }}
           >
             <LiveScheduleFlow
-              currentPhase={phaseDetection.currentPhase}
-              nextPhase={phaseDetection.nextPhase}
+              currentPhase={overridePhaseId 
+                ? phaseDetection.allEvents.find(e => e.id === overridePhaseId)
+                : phaseDetection.currentPhase}
+              nextPhase={overridePhaseId
+                ? phaseDetection.allEvents[phaseDetection.allEvents.findIndex(e => e.id === overridePhaseId) + 1]
+                : phaseDetection.nextPhase}
               phaseTimeRemaining={phaseDetection.phaseTimeRemaining}
               overridePhaseId={overridePhaseId}
             />

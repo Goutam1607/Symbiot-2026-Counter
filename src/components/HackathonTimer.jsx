@@ -121,8 +121,8 @@ export default function HackathonTimer({
             className="font-extrabold tabular-nums leading-none transition-all duration-300"
             style={{
               color: timerColor,
-              fontSize: `clamp(${4 * zoom}rem, ${12 * zoom}cqw, ${30 * zoom}rem)`,
-              textShadow: isDark && isRunning ? `0 0 ${15 * zoom}px rgba(6,182,212,${0.2 * zoom})` : 'none',
+              fontSize: `clamp(${2.5 * zoom}rem, ${9 * zoom}cqw, ${20 * zoom}rem)`,
+              textShadow: isDark && isRunning ? `0 0 ${10 * zoom}px rgba(6,182,212,${0.1 * zoom})` : 'none',
               letterSpacing: '-0.02em',
             }}
           >
@@ -134,7 +134,7 @@ export default function HackathonTimer({
             className="font-extrabold mx-[1%] transition-all duration-300 flex items-center justify-center mb-[1%]"
             style={{
               color: colonColor,
-              fontSize: `clamp(${3.5 * zoom}rem, ${10 * zoom}cqw, ${25 * zoom}rem)`,
+              fontSize: `clamp(${2 * zoom}rem, ${7.5 * zoom}cqw, ${16 * zoom}rem)`,
               lineHeight: 1,
             }}
             animate={isRunning ? { opacity: [1, 0.2, 1] } : {}}
@@ -148,8 +148,8 @@ export default function HackathonTimer({
             className="font-extrabold tabular-nums leading-none transition-all duration-300"
             style={{
               color: timerColor,
-              fontSize: `clamp(${4 * zoom}rem, ${12 * zoom}cqw, ${30 * zoom}rem)`,
-              textShadow: isDark && isRunning ? `0 0 ${15 * zoom}px rgba(6,182,212,${0.2 * zoom})` : 'none',
+              fontSize: `clamp(${2.5 * zoom}rem, ${9 * zoom}cqw, ${20 * zoom}rem)`,
+              textShadow: isDark && isRunning ? `0 0 ${10 * zoom}px rgba(6,182,212,${0.1 * zoom})` : 'none',
               letterSpacing: '-0.02em',
             }}
           >
@@ -161,7 +161,7 @@ export default function HackathonTimer({
             className="font-extrabold mx-[1%] transition-all duration-300 flex items-center justify-center mb-[1%]"
             style={{
               color: colonColor,
-              fontSize: `clamp(${3.5 * zoom}rem, ${10 * zoom}cqw, ${25 * zoom}rem)`,
+              fontSize: `clamp(${2 * zoom}rem, ${7.5 * zoom}cqw, ${16 * zoom}rem)`,
               lineHeight: 1,
             }}
             animate={isRunning ? { opacity: [1, 0.2, 1] } : {}}
@@ -175,8 +175,8 @@ export default function HackathonTimer({
             className="font-extrabold tabular-nums leading-none transition-all duration-300"
             style={{
               color: timerColor,
-              fontSize: `clamp(${4 * zoom}rem, ${12 * zoom}cqw, ${30 * zoom}rem)`,
-              textShadow: isDark && isRunning ? `0 0 ${15 * zoom}px rgba(6,182,212,${0.2 * zoom})` : 'none',
+              fontSize: `clamp(${2.5 * zoom}rem, ${9 * zoom}cqw, ${20 * zoom}rem)`,
+              textShadow: isDark && isRunning ? `0 0 ${10 * zoom}px rgba(6,182,212,${0.1 * zoom})` : 'none',
               letterSpacing: '-0.02em',
             }}
           >
@@ -191,7 +191,7 @@ export default function HackathonTimer({
                           'mt-10 gap-[15%]'}`}>
           {['Hours', 'Minutes', 'Seconds'].map(l => (
             <span key={l} className={`font-bold tracking-[0.25em] uppercase transition-all duration-500 ${mutedColor}
-                                    ${zoom === 1 ? 'text-[9px] md:text-[1.2cqw]' : zoom === 2 ? 'text-xs md:text-[1.5cqw]' : 'text-base md:text-[2cqw]'}`}>
+                                    ${zoom === 1 ? 'text-[8px] md:text-[1.1cqw]' : zoom === 2 ? 'text-xs md:text-[1.3cqw]' : 'text-base md:text-[1.8cqw]'}`}>
               {l}
             </span>
           ))}

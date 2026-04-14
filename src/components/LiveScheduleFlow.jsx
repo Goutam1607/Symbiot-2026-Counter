@@ -69,8 +69,8 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
       <motion.div
         className={`flex-1 mb-2 rounded-xl transition-all duration-500 cursor-pointer overflow-hidden
           ${isCurrent
-            ? 'dark:bg-[rgba(6,182,212,0.18)] dark:border-cyan-500/30 bg-[#ECFEFF] border-l-[4px] border-cyan-500 border-t border-r border-b border-t-cyan-100/50 border-r-cyan-100/50 border-b-cyan-100/50 p-4 -ml-1 shadow-glow scale-[1.02]'
-            : 'dark:bg-[rgba(6,182,212,0.08)] dark:border-white/[0.06] bg-white border border-gray-100 shadow-sm p-4 -ml-1 hover:border-cyan-500/20'
+            ? 'dark:bg-[rgba(6,182,212,0.18)] dark:border-cyan-500/30 bg-[#ECFEFF] border-l-[4px] border-cyan-500 border-t border-r border-b border-t-cyan-100/50 border-r-cyan-100/50 border-b-cyan-100/50 p-3 -ml-1 shadow-glow scale-[1.02]'
+            : 'dark:bg-[rgba(6,182,212,0.08)] dark:border-white/[0.06] bg-white border border-gray-100 shadow-sm p-3 -ml-1 hover:border-cyan-500/20'
           }
         `}
         onClick={onToggle}
@@ -84,7 +84,7 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
           <span className="text-xl">{event.emoji}</span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={`text-lg md:text-xl font-bold truncate
+              <span className={`text-base md:text-lg font-bold truncate
                 ${isCurrent ? 'dark:text-cyan-400 text-cyan-700' : 'dark:text-white text-gray-900'}
               `}>
                 {event.name}
@@ -96,8 +96,15 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
                   Live
                 </span>
               )}
+              {isNext && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase
+                                 dark:bg-amber-500/20 dark:text-amber-400
+                                 bg-amber-100 text-amber-700">
+                  Next
+                </span>
+              )}
             </div>
-            <span className={`text-sm md:text-base font-medium ${isCurrent ? 'dark:text-cyan-300/60 text-cyan-600' : 'dark:text-[#CBD5F5] text-gray-500'}`}>
+            <span className={`text-xs md:text-sm font-medium ${isCurrent ? 'dark:text-cyan-300/60 text-cyan-600' : 'dark:text-[#CBD5F5] text-gray-500'}`}>
               {event.time}
             </span>
           </div>
@@ -173,6 +180,9 @@ export default function LiveScheduleFlow({ currentPhase, nextPhase, phaseTimeRem
     // Automatic Detection
     if (!overridePhaseId && currentPhase && event.id === currentPhase.id) return 'current';
     
+    // Next Detection
+    if (nextPhase && event.id === nextPhase.id) return 'next';
+    
     return 'none';
   };
 
@@ -239,17 +249,23 @@ export default function LiveScheduleFlow({ currentPhase, nextPhase, phaseTimeRem
         })}
       </div>
 
-      {/* Next Event Indicator (Bottom) */}
+      {/* Next Event Indicator (Bottom) — Scaled up for better visibility */}
       {nextPhase && (
-        <div className="px-4 py-3 dark:bg-cyan-500/5 bg-cyan-50 border-t dark:border-white/5 border-gray-100">
+        <div className="px-5 py-4 dark:bg-cyan-500/10 bg-cyan-50 border-t dark:border-white/10 border-cyan-100 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black tracking-widest uppercase dark:text-cyan-500/60 text-cyan-600/60">
+            <span className="text-xs font-black tracking-[0.2em] uppercase dark:text-cyan-500/80 text-cyan-600/80">
               Up Next
             </span>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">{nextPhase.emoji}</span>
-              <span className="text-xs font-bold dark:text-white text-gray-900">{nextPhase.name}</span>
-              <span className="text-[10px] font-medium dark:text-cyan-400 text-cyan-600">at {nextPhase.time.split(' – ')[0]}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{nextPhase.emoji}</span>
+              <div className="flex flex-col items-end">
+                <span className="text-sm md:text-base font-black dark:text-white text-gray-900 leading-tight">
+                  {nextPhase.name}
+                </span>
+                <span className="text-[11px] font-bold dark:text-cyan-400 text-cyan-600 tracking-wide uppercase">
+                  Starting at {nextPhase.time.split(' – ')[0]}
+                </span>
+              </div>
             </div>
           </div>
         </div>
