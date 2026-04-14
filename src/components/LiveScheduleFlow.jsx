@@ -23,7 +23,7 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
 
   return (
     <motion.div
-      className="relative flex items-start gap-3 group"
+      className="relative flex items-start gap-4 group"
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.04, duration: 0.3 }}
@@ -31,7 +31,7 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
       {/* Timeline line + dot */}
       <div className="flex flex-col items-center flex-shrink-0 relative" style={{ width: 24 }}>
         {index > 0 && (
-          <div className={`w-[2px] h-4 ${isPast ? 'dark:bg-cyan-500/40 bg-cyan-500/30' : 'dark:bg-white/[0.06] bg-gray-200'}`} />
+          <div className="w-[1px] h-4 dark:bg-white/[0.06] bg-gray-200" />
         )}
         {index === 0 && <div className="h-4" />}
 
@@ -52,10 +52,8 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
             />
           )}
           <div
-            className={`w-3 h-3 rounded-full relative z-10 transition-all duration-300
+            className={`w-2.5 h-2.5 rounded-full relative z-10 transition-all duration-300
               ${isCurrent ? 'bg-cyan-500 dark:shadow-[0_0_12px_rgba(6,182,212,0.5)] shadow-[0_0_8px_rgba(6,182,212,0.3)]' :
-                isNext ? 'dark:bg-cyan-500/60 bg-cyan-500/50' :
-                isPast ? 'dark:bg-cyan-500/30 bg-cyan-400/30' :
                 'dark:bg-white/10 bg-gray-300'
               }
             `}
@@ -63,54 +61,43 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
         </div>
 
         {index < total - 1 && (
-          <div className={`w-[2px] flex-1 min-h-[16px] ${isPast ? 'dark:bg-cyan-500/30 bg-cyan-400/20' : 'dark:bg-white/[0.06] bg-gray-200'}`} />
+          <div className="w-[1px] flex-1 min-h-[16px] dark:bg-white/[0.06] bg-gray-200" />
         )}
       </div>
 
       {/* Content */}
       <motion.div
-        className={`flex-1 mb-2 rounded-xl transition-all duration-300 cursor-pointer overflow-hidden
+        className={`flex-1 mb-2 rounded-xl transition-all duration-500 cursor-pointer overflow-hidden
           ${isCurrent
-            ? 'dark:bg-gradient-to-r dark:from-cyan-500/[0.08] dark:to-transparent dark:border-cyan-500/20 bg-[#ECFEFF] border-l-[3px] border-cyan-500 border-t border-r border-b border-t-cyan-100 border-r-cyan-100 border-b-cyan-100 p-3 -ml-1'
-            : isNext
-            ? 'dark:bg-white/[0.02] dark:border-white/[0.05] bg-white border border-gray-100 shadow-sm p-3 -ml-1'
-            : isPast
-            ? 'p-2 opacity-50'
-            : 'p-2 dark:hover:bg-white/[0.02] hover:bg-gray-50'
+            ? 'dark:bg-[rgba(6,182,212,0.18)] dark:border-cyan-500/30 bg-[#ECFEFF] border-l-[4px] border-cyan-500 border-t border-r border-b border-t-cyan-100/50 border-r-cyan-100/50 border-b-cyan-100/50 p-4 -ml-1 shadow-glow scale-[1.02]'
+            : 'dark:bg-[rgba(6,182,212,0.08)] dark:border-white/[0.06] bg-white border border-gray-100 shadow-sm p-4 -ml-1 hover:border-cyan-500/20'
           }
         `}
         onClick={onToggle}
-        whileHover={!isPast ? { x: 4 } : {}}
-        animate={isCurrent ? { scale: [1, 1.005, 1] } : {}}
-        transition={isCurrent ? { duration: 3, repeat: Infinity, ease: 'easeInOut' } : {}}
+        whileHover={!isPast ? { scale: isCurrent ? 1.02 : 1.03, x: 4, transition: { duration: 0.2 } } : {}}
+        animate={isCurrent ? {
+          boxShadow: ['0 0 10px rgba(6,182,212,0.2)', '0 0 20px rgba(6,182,212,0.4)', '0 0 10px rgba(6,182,212,0.2)']
+        } : {}}
+        transition={{ duration: 0.3 }}
       >
         <div className="flex items-center gap-2">
-          <span className={`text-lg ${isPast ? 'grayscale opacity-50' : ''}`}>{event.emoji}</span>
+          <span className="text-xl">{event.emoji}</span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={`text-xs md:text-sm font-bold truncate
-                ${isCurrent ? 'dark:text-cyan-400 text-cyan-700' :
-                  isPast ? 'dark:text-gray-600 text-gray-400 line-through' :
-                  'dark:text-gray-300 text-gray-700'}
+              <span className={`text-lg md:text-xl font-bold truncate
+                ${isCurrent ? 'dark:text-cyan-400 text-cyan-700' : 'dark:text-white text-gray-900'}
               `}>
                 {event.name}
               </span>
               {isCurrent && (
-                <span className="px-1.5 py-0.5 rounded text-[8px] font-black tracking-wider uppercase
+                <span className="px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase
                                  dark:bg-cyan-500/20 dark:text-cyan-400
                                  bg-cyan-100 text-cyan-700">
                   Live
                 </span>
               )}
-              {isNext && (
-                <span className="px-1.5 py-0.5 rounded text-[8px] font-black tracking-wider uppercase
-                                 dark:bg-amber-500/15 dark:text-amber-400
-                                 bg-amber-50 text-amber-600">
-                  Next
-                </span>
-              )}
             </div>
-            <span className={`text-[10px] font-medium ${isPast ? 'dark:text-gray-700 text-gray-300' : 'dark:text-gray-500 text-gray-400'}`}>
+            <span className={`text-sm md:text-base font-medium ${isCurrent ? 'dark:text-cyan-300/60 text-cyan-600' : 'dark:text-[#CBD5F5] text-gray-500'}`}>
               {event.time}
             </span>
           </div>
@@ -180,22 +167,13 @@ export default function LiveScheduleFlow({ currentPhase, nextPhase, phaseTimeRem
   }, [currentPhase?.id]);
 
   const getStatus = (event) => {
-    if (overridePhaseId) {
-      if (event.id === overridePhaseId) return 'current';
-      const overrideIdx = allEvents.findIndex(e => e.id === overridePhaseId);
-      const eventIdx = allEvents.findIndex(e => e.id === event.id);
-      if (eventIdx < overrideIdx) return 'past';
-      if (eventIdx === overrideIdx + 1) return 'next';
-      return 'future';
-    }
-    if (currentPhase && event.id === currentPhase.id) return 'current';
-    if (nextPhase && event.id === nextPhase.id) return 'next';
-    if (currentPhase) {
-      const currentIdx = allEvents.findIndex(e => e.id === currentPhase.id);
-      const eventIdx = allEvents.findIndex(e => e.id === event.id);
-      if (eventIdx < currentIdx) return 'past';
-    }
-    return 'future';
+    // Manual Admin Override
+    if (overridePhaseId && event.id === overridePhaseId) return 'current';
+    
+    // Automatic Detection
+    if (!overridePhaseId && currentPhase && event.id === currentPhase.id) return 'current';
+    
+    return 'none';
   };
 
   return (
@@ -239,7 +217,7 @@ export default function LiveScheduleFlow({ currentPhase, nextPhase, phaseTimeRem
       {/* Scrollable timeline */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-3 space-y-0"
+        className="flex-1 overflow-y-auto px-4 py-3 space-y-0 relative"
         style={{ scrollbarWidth: 'thin' }}
       >
         {allEvents.map((event, index) => {
@@ -260,6 +238,22 @@ export default function LiveScheduleFlow({ currentPhase, nextPhase, phaseTimeRem
           );
         })}
       </div>
+
+      {/* Next Event Indicator (Bottom) */}
+      {nextPhase && (
+        <div className="px-4 py-3 dark:bg-cyan-500/5 bg-cyan-50 border-t dark:border-white/5 border-gray-100">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black tracking-widest uppercase dark:text-cyan-500/60 text-cyan-600/60">
+              Up Next
+            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm">{nextPhase.emoji}</span>
+              <span className="text-xs font-bold dark:text-white text-gray-900">{nextPhase.name}</span>
+              <span className="text-[10px] font-medium dark:text-cyan-400 text-cyan-600">at {nextPhase.time.split(' – ')[0]}</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

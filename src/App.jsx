@@ -25,6 +25,14 @@ export default function App() {
   const [threshold, setThreshold] = useState(80);
   const [overridePhaseId, setOverridePhaseId] = useState(null);
 
+  // Resize Panel State
+  const [scheduleWidth, setScheduleWidth] = useState(35); // percentage
+  const [isResizing, setIsResizing] = useState(false);
+  const [lastWidth, setLastWidth] = useState(35);
+
+  // Timer Zoom State
+  const [timerZoom, setTimerZoom] = useState(1);
+
   // Hackathon Timer
   const timer = useHackathonTimer();
 
@@ -69,6 +77,53 @@ export default function App() {
     audio.stop();
     setOverridePhaseId(null);
   }, [timer, audio]);
+
+  // Resizing Logic
+  const handleMouseDown = useCallback((e) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e) => {
+      requestAnimationFrame(() => {
+        const width = 100 - (e.clientX / window.innerWidth) * 100;
+        const constrainedWidth = Math.max(0, Math.min(50, width));
+
+        // Magnetic snap to collapse
+        if (constrainedWidth < 5) {
+          setScheduleWidth(0);
+        } else {
+          setScheduleWidth(constrainedWidth);
+        }
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      if (scheduleWidth > 0) {
+        setLastWidth(scheduleWidth);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, scheduleWidth]);
+
+  const toggleSchedule = useCallback(() => {
+    if (scheduleWidth === 0) {
+      setScheduleWidth(lastWidth || 35);
+    } else {
+      setLastWidth(scheduleWidth);
+      setScheduleWidth(0);
+    }
+  }, [scheduleWidth, lastWidth]);
 
   return (
     <div className="h-screen w-screen overflow-hidden relative transition-colors duration-500"
@@ -134,14 +189,18 @@ export default function App() {
       {/* Dashboard Phase — Split Layout */}
       {phase === PHASE_DASHBOARD && (
         <motion.div
-          className="fixed inset-0 z-10 flex flex-col lg:flex-row"
+          className={`fixed inset-0 z-10 flex flex-col lg:flex-row ${isResizing ? 'cursor-col-resize select-none' : ''}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8 }}
         >
           {/* LEFT SIDE — Timer */}
           <motion.div
-            className="flex-1 lg:flex-[3] flex flex-col relative"
+            className="flex flex-col relative overflow-hidden"
+            style={{
+              flex: scheduleWidth === 0 ? '1 0 100%' : `calc(100% - ${scheduleWidth}%)`,
+              transition: isResizing ? 'none' : 'flex 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
             initial={{ x: -50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 100 }}
@@ -157,7 +216,7 @@ export default function App() {
             </div>
 
             {/* Timer */}
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 timer-container">
               <HackathonTimer
                 hours={timer.hours}
                 minutes={timer.minutes}
@@ -168,6 +227,7 @@ export default function App() {
                 onPause={timer.pause}
                 onReset={timer.reset}
                 onSetTime={timer.setTime}
+                zoom={timerZoom}
                 phaseInfo={{
                   currentPhase: overridePhaseId
                     ? phaseDetection.allEvents.find(e => e.id === overridePhaseId)
@@ -186,17 +246,27 @@ export default function App() {
             </div>
           </motion.div>
 
-          {/* Divider */}
-          <div className="hidden lg:block w-[1px] dark:bg-gradient-to-b dark:from-transparent dark:via-cyan-500/15 dark:to-transparent
-                          bg-gradient-to-b from-transparent via-gray-200 to-transparent" />
+          {/* Resizable Divider (shown only on desktop) */}
+          <div
+            className={`hidden lg:block resize-divider ${isResizing ? 'is-resizing' : ''}`}
+            onMouseDown={handleMouseDown}
+          />
+
+          {/* Mobile Divider (hidden when resizing) */}
           <div className="lg:hidden h-[1px] dark:bg-gradient-to-r dark:from-transparent dark:via-cyan-500/15 dark:to-transparent
                           bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
 
           {/* RIGHT SIDE — Schedule Flow */}
           <motion.div
-            className="flex-1 lg:flex-[2] flex flex-col relative overflow-hidden
+            className={`flex flex-col relative overflow-hidden
                        dark:border-l dark:border-white/[0.03] border-l border-gray-100
-                       dark:bg-[rgba(6,8,18,0.3)] bg-white"
+                       dark:bg-[rgba(6,8,18,0.3)] bg-white`}
+            style={{
+              width: `${scheduleWidth}%`,
+              minWidth: scheduleWidth === 0 ? 0 : '300px',
+              display: scheduleWidth === 0 ? 'none' : 'flex',
+              transition: isResizing ? 'none' : 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
             initial={{ x: 50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.4, type: 'spring', stiffness: 100 }}
@@ -208,6 +278,36 @@ export default function App() {
               overridePhaseId={overridePhaseId}
             />
           </motion.div>
+
+          {/* Collapse/Expand Toggle Button (only when hidden) */}
+          <AnimatePresence>
+            {scheduleWidth === 0 && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                onClick={toggleSchedule}
+                className="fixed bottom-8 right-8 z-50 p-4 rounded-full glass shadow-glow
+                           dark:text-cyan-400 text-cyan-600 font-bold text-xs tracking-widest uppercase
+                           hover:scale-105 active:scale-95 transition-all duration-300"
+              >
+                Show Schedule
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+          {/* Small fixed toggle even when visible (optional but nice) */}
+          {scheduleWidth > 0 && (
+            <button
+              onClick={toggleSchedule}
+              className="hidden lg:block absolute top-[50%] right-0 z-50 p-1 mr-[-10px]
+                         bg-cyan-500 rounded-l-md text-white text-[10px] transition-transform
+                         hover:scale-110 active:scale-90"
+              style={{ transform: 'translateY(-50%)' }}
+            >
+              <span className="block rotate-90">CLOSE</span>
+            </button>
+          )}
         </motion.div>
       )}
 
@@ -226,6 +326,8 @@ export default function App() {
         onSkipVoice={handleSkipVoice}
         overridePhaseId={overridePhaseId}
         onSetOverridePhase={setOverridePhaseId}
+        timerZoom={timerZoom}
+        onSetTimerZoom={setTimerZoom}
       />
     </div>
   );

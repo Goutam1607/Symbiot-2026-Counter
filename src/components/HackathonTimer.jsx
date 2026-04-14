@@ -72,7 +72,7 @@ export default function HackathonTimer({
   hours, minutes, seconds,
   isRunning, progress,
   onStart, onPause, onReset, onSetTime,
-  phaseInfo,
+  phaseInfo, zoom = 1,
 }) {
   const [showEdit, setShowEdit] = useState(false);
   const [isDark, setIsDark] = useState(true);
@@ -97,7 +97,7 @@ export default function HackathonTimer({
   return (
     <div className="flex flex-col items-center justify-center h-full py-8 px-4">
       {/* Label */}
-      <div className="mb-6 text-center">
+      <div className={`text-center transition-all duration-500 ${zoom > 1 ? 'mb-12' : 'mb-6'}`}>
         <div className="flex items-center gap-2 justify-center mb-1">
           {isRunning && (
             <motion.div
@@ -106,21 +106,23 @@ export default function HackathonTimer({
               transition={{ duration: 1, repeat: Infinity }}
             />
           )}
-          <span className={`text-[10px] md:text-xs font-bold tracking-[0.3em] uppercase ${labelColor}`}>
+          <span className={`font-bold tracking-[0.3em] uppercase transition-all duration-500 ${labelColor}
+                           ${zoom <= 1.25 ? 'text-[10px] md:text-xs' : zoom <= 1.75 ? 'text-sm md:text-base' : 'text-base md:text-xl'}`}>
             {isRunning ? 'Hackathon Live Timer' : 'Hackathon Timer'}
           </span>
         </div>
       </div>
 
       {/* Main time display — clean, no animations on digits */}
-      <div className="text-center">
-        <div className="flex items-baseline justify-center">
+      <div className="flex flex-col items-center justify-center w-full max-w-full">
+        <div className="flex items-baseline justify-center w-full">
           {/* Hours */}
           <span
-            className="text-6xl md:text-7xl lg:text-8xl font-extrabold tabular-nums leading-none"
+            className="font-extrabold tabular-nums leading-none transition-all duration-300"
             style={{
               color: timerColor,
-              textShadow: isDark && isRunning ? '0 0 30px rgba(6,182,212,0.15)' : 'none',
+              fontSize: `clamp(${4 * zoom}rem, ${12 * zoom}cqw, ${30 * zoom}rem)`,
+              textShadow: isDark && isRunning ? `0 0 ${15 * zoom}px rgba(6,182,212,${0.2 * zoom})` : 'none',
               letterSpacing: '-0.02em',
             }}
           >
@@ -129,8 +131,11 @@ export default function HackathonTimer({
 
           {/* Colon 1 */}
           <motion.span
-            className="text-5xl md:text-6xl lg:text-7xl font-extrabold mx-1 md:mx-2 self-center"
-            style={{ color: colonColor }}
+            className="font-extrabold mx-[1%] self-center transition-all duration-300"
+            style={{
+              color: colonColor,
+              fontSize: `clamp(${3.5 * zoom}rem, ${10 * zoom}cqw, ${25 * zoom}rem)`,
+            }}
             animate={isRunning ? { opacity: [1, 0.2, 1] } : {}}
             transition={{ duration: 1, repeat: Infinity }}
           >
@@ -139,10 +144,11 @@ export default function HackathonTimer({
 
           {/* Minutes */}
           <span
-            className="text-6xl md:text-7xl lg:text-8xl font-extrabold tabular-nums leading-none"
+            className="font-extrabold tabular-nums leading-none transition-all duration-300"
             style={{
               color: timerColor,
-              textShadow: isDark && isRunning ? '0 0 30px rgba(6,182,212,0.15)' : 'none',
+              fontSize: `clamp(${4 * zoom}rem, ${12 * zoom}cqw, ${30 * zoom}rem)`,
+              textShadow: isDark && isRunning ? `0 0 ${15 * zoom}px rgba(6,182,212,${0.2 * zoom})` : 'none',
               letterSpacing: '-0.02em',
             }}
           >
@@ -151,8 +157,11 @@ export default function HackathonTimer({
 
           {/* Colon 2 */}
           <motion.span
-            className="text-5xl md:text-6xl lg:text-7xl font-extrabold mx-1 md:mx-2 self-center"
-            style={{ color: colonColor }}
+            className="font-extrabold mx-[1%] self-center transition-all duration-300"
+            style={{
+              color: colonColor,
+              fontSize: `clamp(${3.5 * zoom}rem, ${10 * zoom}cqw, ${25 * zoom}rem)`,
+            }}
             animate={isRunning ? { opacity: [1, 0.2, 1] } : {}}
             transition={{ duration: 1, repeat: Infinity, delay: 0.5 }}
           >
@@ -161,10 +170,11 @@ export default function HackathonTimer({
 
           {/* Seconds */}
           <span
-            className="text-6xl md:text-7xl lg:text-8xl font-extrabold tabular-nums leading-none"
+            className="font-extrabold tabular-nums leading-none transition-all duration-300"
             style={{
               color: timerColor,
-              textShadow: isDark && isRunning ? '0 0 30px rgba(6,182,212,0.15)' : 'none',
+              fontSize: `clamp(${4 * zoom}rem, ${12 * zoom}cqw, ${30 * zoom}rem)`,
+              textShadow: isDark && isRunning ? `0 0 ${15 * zoom}px rgba(6,182,212,${0.2 * zoom})` : 'none',
               letterSpacing: '-0.02em',
             }}
           >
@@ -173,16 +183,22 @@ export default function HackathonTimer({
         </div>
 
         {/* Labels underneath */}
-        <div className="flex justify-center mt-3 gap-16 md:gap-20 lg:gap-24">
-          <span className={`text-[9px] font-bold tracking-[0.25em] uppercase ${mutedColor}`}>Hours</span>
-          <span className={`text-[9px] font-bold tracking-[0.25em] uppercase ${mutedColor}`}>Minutes</span>
-          <span className={`text-[9px] font-bold tracking-[0.25em] uppercase ${mutedColor}`}>Seconds</span>
+        <div className={`flex justify-center transition-all duration-500 w-full
+                        ${zoom === 1 ? 'mt-3 gap-[10%]' :
+                          zoom === 2 ? 'mt-6 gap-[12%]' :
+                          'mt-10 gap-[15%]'}`}>
+          {['Hours', 'Minutes', 'Seconds'].map(l => (
+            <span key={l} className={`font-bold tracking-[0.25em] uppercase transition-all duration-500 ${mutedColor}
+                                    ${zoom === 1 ? 'text-[9px] md:text-[1.2cqw]' : zoom === 2 ? 'text-xs md:text-[1.5cqw]' : 'text-base md:text-[2cqw]'}`}>
+              {l}
+            </span>
+          ))}
         </div>
       </div>
 
       {/* Progress bar */}
-      <div className="w-full max-w-sm mt-8 mb-2">
-        <div className={`h-1 rounded-full w-full ${isDark ? 'bg-white/[0.06]' : 'bg-gray-200'}`}>
+      <div className={`w-full transition-all duration-500 ${zoom === 1 ? 'max-w-[40%] mt-8' : zoom === 2 ? 'max-w-[60%] mt-12' : 'max-w-[80%] mt-16'} mb-2`}>
+        <div className={`rounded-full w-full transition-all duration-500 ${zoom === 1 ? 'h-1' : zoom === 2 ? 'h-2' : 'h-3'} ${isDark ? 'bg-white/[0.06]' : 'bg-gray-200'}`}>
           <motion.div
             className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-400"
             style={{ width: `${progress * 100}%` }}
@@ -190,10 +206,12 @@ export default function HackathonTimer({
           />
         </div>
         <div className="flex justify-between mt-1.5">
-          <span className={`text-[9px] font-bold tracking-widest ${mutedColor}`}>
+          <span className={`font-bold tracking-widest transition-all duration-500 ${mutedColor}
+                           ${zoom === 1 ? 'text-[9px] md:text-[1cqw]' : zoom === 2 ? 'text-[11px] md:text-[1.2cqw]' : 'text-sm md:text-[1.5cqw]'}`}>
             {Math.round(progress * 100)}% ELAPSED
           </span>
-          <span className={`text-[9px] font-bold tracking-widest ${mutedColor}`}>
+          <span className={`font-bold tracking-widest transition-all duration-500 ${mutedColor}
+                           ${zoom === 1 ? 'text-[9px] md:text-[1cqw]' : zoom === 2 ? 'text-[11px] md:text-[1.2cqw]' : 'text-sm md:text-[1.5cqw]'}`}>
             24:00:00
           </span>
         </div>
@@ -201,24 +219,31 @@ export default function HackathonTimer({
 
       {/* Phase info */}
       {phaseInfo && (
-        <div className="mt-4 text-center space-y-1">
+        <div className={`text-center space-y-1 transition-all duration-500 ${zoom === 1 ? 'mt-4' : zoom === 2 ? 'mt-8' : 'mt-12'}`}>
           {phaseInfo.currentPhase && (
             <div className="flex items-center justify-center gap-2">
-              <span className="text-lg">{phaseInfo.currentPhase.emoji}</span>
-              <span className={`text-xs font-bold ${phaseTextColor}`}>
+              <span className={`transition-all duration-500 ${zoom === 1 ? 'text-lg' : zoom === 2 ? 'text-2xl' : 'text-4xl'}`}>
+                {phaseInfo.currentPhase.emoji}
+              </span>
+              <span className={`font-bold transition-all duration-500 ${phaseTextColor}
+                               ${zoom === 1 ? 'text-xs' : zoom === 2 ? 'text-base' : 'text-xl'}`}>
                 CURRENT: {phaseInfo.currentPhase.name}
               </span>
               {phaseInfo.phaseTimeRemaining != null && (
-                <span className={`text-[10px] font-mono ${mutedColor}`}>
-                  ends in {Math.floor(phaseInfo.phaseTimeRemaining / 60)}m {phaseInfo.phaseTimeRemaining % 60}s
+                <span className={`font-mono transition-all duration-500 ${mutedColor}
+                                 ${zoom === 1 ? 'text-[10px]' : zoom === 2 ? 'text-xs' : 'text-base'}`}>
+                  ends in {String(Math.floor(phaseInfo.phaseTimeRemaining / 60)).padStart(2, '0')}m {String(phaseInfo.phaseTimeRemaining % 60).padStart(2, '0')}s
                 </span>
               )}
             </div>
           )}
           {phaseInfo.nextPhase && (
             <div className="flex items-center justify-center gap-2">
-              <span className="text-sm">{phaseInfo.nextPhase.emoji}</span>
-              <span className={`text-[11px] ${mutedColor}`}>
+              <span className={`transition-all duration-500 ${zoom === 1 ? 'text-sm' : zoom === 2 ? 'text-lg' : 'text-2xl'}`}>
+                {phaseInfo.nextPhase.emoji}
+              </span>
+              <span className={`transition-all duration-500 ${mutedColor}
+                               ${zoom === 1 ? 'text-[11px]' : zoom === 2 ? 'text-sm' : 'text-lg'}`}>
                 NEXT: {phaseInfo.nextPhase.name}
                 {phaseInfo.phaseTimeRemaining != null && !phaseInfo.currentPhase && (
                   <span className="ml-1 text-cyan-600 dark:text-cyan-500/70">
