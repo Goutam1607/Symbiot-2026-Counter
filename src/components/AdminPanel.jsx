@@ -10,6 +10,7 @@ export default function AdminPanel({
   onSkipVoice,
   overridePhaseId, onSetOverridePhase,
   timerZoom, onSetTimerZoom,
+  scheduleZoom, onSetScheduleZoom,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const allEvents = SCHEDULE.flatMap(d => d.events);
@@ -209,8 +210,29 @@ export default function AdminPanel({
                           </button>
                         ))}
                       </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] dark:text-gray-500 text-gray-400 font-bold tracking-wider uppercase mb-2 block">
+                        Schedule Zoom Level
+                      </label>
+                      <div className="flex bg-gray-50 dark:bg-white/5 p-1 rounded-xl border border-gray-100 dark:border-white/10 gap-1 overflow-x-auto">
+                        {[0.8, 1, 1.2, 1.4, 1.6].map((num) => (
+                          <button
+                            key={num}
+                            onClick={() => onSetScheduleZoom(num)}
+                            className={`flex-1 py-2 px-2 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap
+                              ${scheduleZoom === num
+                                ? 'bg-cyan-500 text-white shadow-sm shadow-cyan-500/30'
+                                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
+                              }`}
+                          >
+                            {num}x
+                          </button>
+                        ))}
+                      </div>
                       <p className="text-[9px] dark:text-gray-600 text-gray-400 mt-2 px-1">
-                        Adjust timer size for better visibility on large projectors.
+                        Adjust schedule font size if it looks too large/small on your screen.
                       </p>
                     </div>
                   </div>

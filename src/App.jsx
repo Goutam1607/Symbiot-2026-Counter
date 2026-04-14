@@ -32,6 +32,7 @@ export default function App() {
 
   // Timer Zoom State
   const [timerZoom, setTimerZoom] = useState(1.75);
+  const [scheduleZoom, setScheduleZoom] = useState(1);
 
   // Hackathon Timer
   const timer = useHackathonTimer();
@@ -296,6 +297,7 @@ export default function App() {
                 : phaseDetection.nextPhase}
               phaseTimeRemaining={phaseDetection.phaseTimeRemaining}
               overridePhaseId={overridePhaseId}
+              zoom={scheduleZoom}
             />
           </motion.div>
 
@@ -343,11 +345,13 @@ export default function App() {
         onSetTime={timer.setTime}
         threshold={threshold}
         onSetThreshold={setThreshold}
-        onSkipVoice={handleSkipVoice}
+        onSkipVoice={() => setPhase(PHASE_DASHBOARD)}
         overridePhaseId={overridePhaseId}
         onSetOverridePhase={setOverridePhaseId}
         timerZoom={timerZoom}
         onSetTimerZoom={setTimerZoom}
+        scheduleZoom={scheduleZoom}
+        onSetScheduleZoom={setScheduleZoom}
       />
     </div>
   );

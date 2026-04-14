@@ -16,7 +16,7 @@ function PhaseCountdown({ seconds }) {
   );
 }
 
-function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaining, total }) {
+function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaining, total, zoom = 1 }) {
   const isCurrent = status === 'current';
   const isNext = status === 'next';
   const isPast = status === 'past';
@@ -24,12 +24,13 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
   return (
     <motion.div
       className="relative flex items-start gap-4 group"
+      style={{ paddingBottom: `${0.5 * zoom}rem` }}
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.04, duration: 0.3 }}
     >
       {/* Timeline line + dot */}
-      <div className="flex flex-col items-center flex-shrink-0 relative" style={{ width: 24 }}>
+      <div className="flex flex-col items-center flex-shrink-0 relative" style={{ width: 24 * zoom }}>
         {index > 0 && (
           <div className="w-[1px] h-4 dark:bg-white/[0.06] bg-gray-200" />
         )}
@@ -57,6 +58,7 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
                 'dark:bg-white/10 bg-gray-300'
               }
             `}
+            style={{ width: 8 * zoom, height: 8 * zoom }}
           />
         </div>
 
@@ -69,10 +71,11 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
       <motion.div
         className={`flex-1 mb-2 rounded-xl transition-all duration-500 cursor-pointer overflow-hidden
           ${isCurrent
-            ? 'dark:bg-[rgba(6,182,212,0.18)] dark:border-cyan-500/30 bg-[#ECFEFF] border-l-[4px] border-cyan-500 border-t border-r border-b border-t-cyan-100/50 border-r-cyan-100/50 border-b-cyan-100/50 p-3 -ml-1 shadow-glow scale-[1.02]'
-            : 'dark:bg-[rgba(6,182,212,0.08)] dark:border-white/[0.06] bg-white border border-gray-100 shadow-sm p-3 -ml-1 hover:border-cyan-500/20'
+            ? 'dark:bg-[rgba(6,182,212,0.18)] dark:border-cyan-500/30 bg-[#ECFEFF] border-l-[4px] border-cyan-500 border-t border-r border-b border-t-cyan-100/50 border-r-cyan-100/50 border-b-cyan-100/50 shadow-glow scale-[1.02]'
+            : 'dark:bg-[rgba(6,182,212,0.08)] dark:border-white/[0.06] bg-white border border-gray-100 shadow-sm hover:border-cyan-500/20'
           }
         `}
+        style={{ padding: `${0.75 * zoom}rem`, marginLeft: '-4px' }}
         onClick={onToggle}
         whileHover={!isPast ? { scale: isCurrent ? 1.02 : 1.03, x: 4, transition: { duration: 0.2 } } : {}}
         animate={isCurrent ? {
@@ -81,38 +84,52 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
         transition={{ duration: 0.3 }}
       >
         <div className="flex items-center gap-2">
-          <span className="text-xl">{event.emoji}</span>
+          <span style={{ fontSize: `${1.2 * zoom}rem` }}>{event.emoji}</span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={`text-base md:text-lg font-bold truncate
-                ${isCurrent ? 'dark:text-cyan-400 text-cyan-700' : 'dark:text-white text-gray-900'}
-              `}>
+              <span 
+                className={`font-bold truncate ${isCurrent ? 'dark:text-cyan-400 text-cyan-700' : 'dark:text-white text-gray-900'}`}
+                style={{ fontSize: `${1.1 * zoom}rem` }}
+              >
                 {event.name}
               </span>
               {isCurrent && (
-                <span className="px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase
-                                 dark:bg-cyan-500/20 dark:text-cyan-400
-                                 bg-cyan-100 text-cyan-700">
+                <span 
+                  className="px-2 py-0.5 rounded font-black tracking-wider uppercase dark:bg-cyan-500/20 dark:text-cyan-400 bg-cyan-100 text-cyan-700"
+                  style={{ fontSize: `${8 * zoom}px` }}
+                >
                   Live
                 </span>
               )}
               {isNext && (
-                <span className="px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase
-                                 dark:bg-amber-500/20 dark:text-amber-400
-                                 bg-amber-100 text-amber-700">
+                <span 
+                  className="px-2 py-0.5 rounded font-black tracking-wider uppercase dark:bg-amber-500/20 dark:text-amber-400 bg-amber-100 text-amber-700"
+                  style={{ fontSize: `${8 * zoom}px` }}
+                >
                   Next
                 </span>
               )}
             </div>
-            <span className={`text-xs md:text-sm font-medium ${isCurrent ? 'dark:text-cyan-300/60 text-cyan-600' : 'dark:text-[#CBD5F5] text-gray-500'}`}>
+            <span 
+              className={`font-medium ${isCurrent ? 'dark:text-cyan-300/60 text-cyan-600' : 'dark:text-[#CBD5F5] text-gray-500'}`}
+              style={{ fontSize: `${0.85 * zoom}rem` }}
+            >
               {event.time}
             </span>
           </div>
 
           {isCurrent && phaseTimeRemaining != null && (
             <div className="text-right flex-shrink-0">
-              <div className="text-[8px] dark:text-gray-500 text-gray-400 font-bold tracking-wider uppercase">Ends in</div>
-              <div className="text-xs dark:text-cyan-400 text-cyan-700 font-black">
+              <div 
+                className="dark:text-gray-500 text-gray-400 font-bold tracking-wider uppercase"
+                style={{ fontSize: `${7 * zoom}px` }}
+              >
+                Ends in
+              </div>
+              <div 
+                className="dark:text-cyan-400 text-cyan-700 font-black"
+                style={{ fontSize: `${0.75 * zoom}rem` }}
+              >
                 <PhaseCountdown seconds={phaseTimeRemaining} />
               </div>
             </div>
@@ -120,7 +137,8 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
 
           {!isPast && (
             <motion.span
-              className="dark:text-gray-600 text-gray-300 text-[10px] flex-shrink-0"
+              className="dark:text-gray-600 text-gray-300 flex-shrink-0"
+              style={{ fontSize: `${10 * zoom}px` }}
               animate={{ rotate: isExpanded ? 180 : 0 }}
             >
               ▾
@@ -138,11 +156,19 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
               className="overflow-hidden"
             >
               <div className="mt-2 pt-2 dark:border-white/[0.05] border-gray-100 border-t">
-                <p className="text-[11px] dark:text-gray-400 text-gray-500 leading-relaxed">
+                <p 
+                  className="dark:text-gray-400 text-gray-500 leading-relaxed"
+                  style={{ fontSize: `${0.75 * zoom}rem` }}
+                >
                   {event.description || `${event.name} — ${event.time}`}
                 </p>
                 {event.location && (
-                  <p className="text-[10px] dark:text-gray-500 text-gray-400 mt-1">📍 {event.location}</p>
+                  <p 
+                    className="dark:text-gray-500 text-gray-400 mt-1"
+                    style={{ fontSize: `${0.7 * zoom}rem` }}
+                  >
+                    📍 {event.location}
+                  </p>
                 )}
               </div>
             </motion.div>
@@ -153,7 +179,7 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
   );
 }
 
-export default function LiveScheduleFlow({ currentPhase, nextPhase, phaseTimeRemaining, overridePhaseId }) {
+export default function LiveScheduleFlow({ currentPhase, nextPhase, phaseTimeRemaining, overridePhaseId, zoom = 1 }) {
   const [expandedId, setExpandedId] = useState(null);
   const scrollRef = useRef(null);
   const activeRef = useRef(null);
@@ -243,6 +269,7 @@ export default function LiveScheduleFlow({ currentPhase, nextPhase, phaseTimeRem
                 isExpanded={expandedId === event.id}
                 onToggle={() => setExpandedId(expandedId === event.id ? null : event.id)}
                 phaseTimeRemaining={isCurrent ? phaseTimeRemaining : null}
+                zoom={zoom}
               />
             </div>
           );
@@ -251,18 +278,30 @@ export default function LiveScheduleFlow({ currentPhase, nextPhase, phaseTimeRem
 
       {/* Next Event Indicator (Bottom) — Scaled up for better visibility */}
       {nextPhase && (
-        <div className="px-5 py-4 dark:bg-cyan-500/10 bg-cyan-50 border-t dark:border-white/10 border-cyan-100 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+        <div 
+          className="px-5 py-4 dark:bg-cyan-500/10 bg-cyan-50 border-t dark:border-white/10 border-cyan-100 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
+          style={{ padding: `${1 * zoom}rem ${1.25 * zoom}rem` }}
+        >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black tracking-[0.2em] uppercase dark:text-cyan-500/80 text-cyan-600/80">
+            <span 
+              className="font-black tracking-[0.2em] uppercase dark:text-cyan-500/80 text-cyan-600/80"
+              style={{ fontSize: `${0.75 * zoom}rem` }}
+            >
               Up Next
             </span>
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{nextPhase.emoji}</span>
+              <span style={{ fontSize: `${1.5 * zoom}rem` }}>{nextPhase.emoji}</span>
               <div className="flex flex-col items-end">
-                <span className="text-sm md:text-base font-black dark:text-white text-gray-900 leading-tight">
+                <span 
+                  className="font-black dark:text-white text-gray-900 leading-tight"
+                  style={{ fontSize: `${1 * zoom}rem` }}
+                >
                   {nextPhase.name}
                 </span>
-                <span className="text-[11px] font-bold dark:text-cyan-400 text-cyan-600 tracking-wide uppercase">
+                <span 
+                  className="font-bold dark:text-cyan-400 text-cyan-600 tracking-wide uppercase"
+                  style={{ fontSize: `${0.7 * zoom}rem` }}
+                >
                   Starting at {nextPhase.time.split(' – ')[0]}
                 </span>
               </div>
