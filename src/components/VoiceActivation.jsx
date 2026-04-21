@@ -192,17 +192,20 @@ export default function VoiceActivation({
           🎤 Enable Microphone to Start
         </motion.button>
       ) : (
-        <div className="scream-container pt-4">
+        <div className="w-full max-w-full overflow-hidden px-5 flex flex-col items-center pt-4">
           <p className="text-base font-medium dark:text-gray-500 text-gray-400 mb-4 tracking-widest uppercase text-center w-full">
             Scream together:
           </p>
           
-          <div className="scream-wrapper">
+          <div className="w-full flex justify-center items-center">
             <AnimatePresence mode="wait">
               <motion.div
                 key={WORDS[currentIndex]}
-                className="scream-text font-black"
-                style={{ color: WORD_COLORS[WORDS[currentIndex]] }}
+                className="font-black whitespace-nowrap text-center leading-none"
+                style={{ 
+                  color: WORD_COLORS[WORDS[currentIndex]],
+                  fontSize: 'clamp(40px, 15vw, 160px)'
+                }}
                 initial={{ scale: 0.5, opacity: 0, rotateX: 90 }}
                 animate={{ scale: 1, opacity: 1, rotateX: 0 }}
                 exit={{ scale: 1.5, opacity: 0, y: -50 }}
