@@ -1,29 +1,45 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SCHEDULE } from '../utils/schedule';
+import { SCHEDULE, TOTAL_SECONDS } from '../utils/schedule';
 
 export default function AdminPanel({
-  isRunning,
-  hours, minutes, seconds,
+  isRunning, isPaused,
+  hours, minutes, seconds, elapsedTime,
   onStart, onPause, onReset, onSetTime,
-  
-  // Phase Timer Props
-  phaseTimerRunning,
-  phaseHours, phaseMinutes, phaseSeconds,
-  onPhaseStart, onPhasePause, onPhaseReset, onPhaseSetTime,
-
+  onJumpToPhase, currentPhaseIndex,
   threshold, onSetThreshold,
   onSkipVoice,
-  overridePhaseId, onSetOverridePhase,
   timerZoom, onSetTimerZoom,
   scheduleZoom, onSetScheduleZoom,
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const allEvents = SCHEDULE.flatMap(d => d.events);
+
+  // Local state for the set-time inputs
+  const [editH, setEditH] = useState('');
+  const [editM, setEditM] = useState('');
+  const [editS, setEditS] = useState('');
+
+  const handleSetTime = () => {
+    const h = parseInt(editH) || 0;
+    const m = parseInt(editM) || 0;
+    const s = parseInt(editS) || 0;
+    onSetTime(h, m, s);
+    setEditH(''); setEditM(''); setEditS('');
+  };
+
+  const adjustTime = (delta) => {
+    // delta in seconds applied to remaining time
+    const remaining = TOTAL_SECONDS - elapsedTime;
+    const newRemaining = Math.max(0, Math.min(remaining + delta, TOTAL_SECONDS));
+    const newH = Math.floor(newRemaining / 3600);
+    const newM = Math.floor((newRemaining % 3600) / 60);
+    const newS = Math.floor(newRemaining % 60);
+    onSetTime(newH, newM, newS);
+  };
 
   return (
     <>
-      {/* Hidden toggle */}
+      {/* Toggle button */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed top-6 left-6 z-50 w-8 h-8 rounded-lg
@@ -77,18 +93,24 @@ export default function AdminPanel({
                   </button>
                 </div>
 
-                {/* Timer Controls */}
-                <Section title="⏱ Timer Controls">
-                  <div className="grid grid-cols-3 gap-2 mb-3">
+                {/* ── Timer Controls ── */}
+                <Section title="⏱ Main Timer">
+                  {/* Current time badge */}
+                  <div className="text-center mb-3 font-black tabular-nums dark:text-white text-gray-900 text-2xl">
+                    {pad(hours)}:{pad(minutes)}:{pad(seconds)}
+                    <span className="text-xs dark:text-gray-500 text-gray-400 font-normal ml-2 tracking-widest">remaining</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 mb-3">
                     <button
-                      onClick={isRunning ? onPause : onStart}
+                      onClick={isRunning && !isPaused ? onPause : onStart}
                       className={`py-2.5 rounded-xl text-xs font-bold transition-all ${
-                        isRunning
+                        isRunning && !isPaused
                           ? 'dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 bg-amber-50 text-amber-600 border border-amber-200'
                           : 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white'
                       }`}
                     >
-                      {isRunning ? '⏸ Pause' : '▶ Start'}
+                      {isRunning && !isPaused ? '⏸ Pause' : '▶ Start'}
                     </button>
                     <button
                       onClick={onReset}
@@ -97,43 +119,24 @@ export default function AdminPanel({
                                  bg-gray-50 text-gray-500 border border-gray-200
                                  hover:border-red-300 dark:hover:border-red-500/20"
                     >
-                      ↺ Reset
-                    </button>
-                    <button
-                      onClick={() => {
-                        const h = parseInt(prompt('Hours:', hours));
-                        const m = parseInt(prompt('Minutes:', minutes));
-                        const s = parseInt(prompt('Seconds:', seconds));
-                        if (!isNaN(h) && !isNaN(m) && !isNaN(s)) onSetTime(h, m, s);
-                      }}
-                      className="py-2.5 rounded-xl text-xs font-bold transition-all
-                                 dark:bg-white/5 dark:text-gray-400 dark:border-white/10
-                                 bg-gray-50 text-gray-500 border border-gray-200
-                                 hover:border-cyan-300 dark:hover:border-cyan-500/20"
-                    >
-                      ✏️ Edit
+                      ↺ Full Reset
                     </button>
                   </div>
 
-                  {/* Quick time adjustments */}
-                  <div className="flex gap-1.5 flex-wrap">
+                  {/* Quick adjustments */}
+                  <div className="flex gap-1.5 flex-wrap mb-3">
                     {[
-                      { label: '-5m', delta: -300 },
-                      { label: '-1m', delta: -60 },
-                      { label: '+1m', delta: 60 },
-                      { label: '+5m', delta: 300 },
-                      { label: '+30m', delta: 1800 },
-                      { label: '+1h', delta: 3600 },
+                      { label: '-30m', delta: -1800 },
+                      { label: '-5m',  delta: -300  },
+                      { label: '-1m',  delta: -60   },
+                      { label: '+1m',  delta: 60    },
+                      { label: '+5m',  delta: 300   },
+                      { label: '+30m', delta: 1800  },
+                      { label: '+1h',  delta: 3600  },
                     ].map(({ label, delta }) => (
                       <button
                         key={label}
-                        onClick={() => {
-                          const total = hours * 3600 + minutes * 60 + seconds + delta;
-                          const h = Math.floor(Math.max(0, total) / 3600);
-                          const m = Math.floor((Math.max(0, total) % 3600) / 60);
-                          const s = Math.max(0, total) % 60;
-                          onSetTime(h, m, s);
-                        }}
+                        onClick={() => adjustTime(delta)}
                         className="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all
                                    dark:bg-white/5 dark:text-gray-400 dark:border-white/[0.06] dark:hover:border-cyan-500/20 dark:hover:text-cyan-400
                                    bg-gray-50 text-gray-500 border border-gray-200 hover:border-cyan-300 hover:text-cyan-600"
@@ -142,98 +145,80 @@ export default function AdminPanel({
                       </button>
                     ))}
                   </div>
-                </Section>
 
-                {/* Individual Phase Timer */}
-                <Section title="⏳ Individual Phase Timer">
-                  <p className="text-[10px] dark:text-gray-500 text-gray-400 mb-3">
-                    Independent countdown for the current phase.
-                  </p>
-                  <div className="grid grid-cols-3 gap-2 mb-3">
-                    <button
-                      onClick={phaseTimerRunning ? onPhasePause : onPhaseStart}
-                      className={`py-2 rounded-xl text-[10px] font-bold transition-all ${
-                        phaseTimerRunning
-                          ? 'dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 bg-amber-50 text-amber-600 border border-amber-200'
-                          : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white'
-                      }`}
-                    >
-                      {phaseTimerRunning ? '⏸ Pause' : '▶ Start'}
-                    </button>
-                    <button
-                      onClick={onPhaseReset}
-                      className="py-2 rounded-xl text-[10px] font-bold transition-all
-                                 dark:bg-white/5 dark:text-gray-400 dark:border-white/10
-                                 bg-gray-50 text-gray-500 border border-gray-200"
-                    >
-                      ↺ Reset
-                    </button>
-                    <button
-                      onClick={() => {
-                        const h = parseInt(prompt('Phase Hours:', phaseHours));
-                        const m = parseInt(prompt('Phase Minutes:', phaseMinutes));
-                        const s = parseInt(prompt('Phase Seconds:', phaseSeconds));
-                        if (!isNaN(h) && !isNaN(m) && !isNaN(s)) onPhaseSetTime(h, m, s);
-                      }}
-                      className="py-2 rounded-xl text-[10px] font-bold transition-all
-                                 dark:bg-white/5 dark:text-gray-400 dark:border-white/10
-                                 bg-gray-50 text-gray-500 border border-gray-200"
-                    >
-                      ✏️ Edit
-                    </button>
-                  </div>
-
-                  <div className="flex gap-1.5 flex-wrap">
-                    {[
-                      { label: '-5m', delta: -300 },
-                      { label: '+1m', delta: 60 },
-                      { label: '+5m', delta: 300 },
-                      { label: '+15m', delta: 900 },
-                      { label: '+30m', delta: 1800 },
-                    ].map(({ label, delta }) => (
+                  {/* Manual time input */}
+                  <div className="dark:bg-white/[0.02] bg-gray-50 rounded-xl p-3 border dark:border-white/[0.05] border-gray-100">
+                    <p className="text-[10px] dark:text-gray-500 text-gray-400 font-bold tracking-wider uppercase mb-2">
+                      Set Remaining Time
+                    </p>
+                    <div className="flex gap-2 items-center">
+                      {[
+                        { ph: 'HH', val: editH, set: setEditH, max: 24 },
+                        { ph: 'MM', val: editM, set: setEditM, max: 59 },
+                        { ph: 'SS', val: editS, set: setEditS, max: 59 },
+                      ].map(({ ph, val, set, max }, i) => (
+                        <div key={ph} className="flex-1 flex items-center gap-1">
+                          <input
+                            type="number"
+                            placeholder={ph}
+                            min={0}
+                            max={max}
+                            value={val}
+                            onChange={e => set(e.target.value)}
+                            className="w-full px-2 py-2 rounded-lg text-center text-sm font-black outline-none
+                                       dark:bg-white/5 dark:border-white/10 dark:text-white
+                                       bg-white border border-gray-200 text-gray-900
+                                       focus:border-cyan-500"
+                          />
+                          {i < 2 && <span className="dark:text-gray-600 text-gray-300 font-bold">:</span>}
+                        </div>
+                      ))}
                       <button
-                        key={label}
-                        onClick={() => {
-                          const total = phaseHours * 3600 + phaseMinutes * 60 + phaseSeconds + delta;
-                          const h = Math.floor(Math.max(0, total) / 3600);
-                          const m = Math.floor((Math.max(0, total) % 3600) / 60);
-                          const s = Math.max(0, total) % 60;
-                          onPhaseSetTime(h, m, s);
-                        }}
-                        className="px-2 py-1 rounded-lg text-[9px] font-bold transition-all
-                                   dark:bg-white/5 dark:text-gray-400 dark:border-white/[0.06]
-                                   bg-gray-50 text-gray-500 border border-gray-200"
+                        onClick={handleSetTime}
+                        className="px-3 py-2 rounded-lg text-xs font-bold bg-cyan-500 text-white hover:bg-cyan-400 transition-all"
                       >
-                        {label}
+                        Set
                       </button>
-                    ))}
+                    </div>
+                    <p className="text-[9px] dark:text-gray-600 text-gray-400 mt-1.5">
+                      Phase auto-updates after setting.
+                    </p>
                   </div>
                 </Section>
 
-                {/* Phase Override */}
-                <Section title="🎯 Phase Override">
+                {/* ── Phase Jump ── */}
+                <Section title="🎯 Jump to Phase">
                   <p className="text-[10px] dark:text-gray-500 text-gray-400 mb-3">
-                    Manually select the current phase. Select "Auto" for automatic detection.
+                    Instantly set elapsed time to the start of any phase. All timers sync automatically.
                   </p>
-                  <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
-                    <PhaseOption
-                      selected={!overridePhaseId}
-                      onClick={() => onSetOverridePhase(null)}
-                      label="🤖 Auto Detect"
-                    />
-                    {allEvents.map((event) => (
-                      <PhaseOption
-                        key={event.id}
-                        selected={overridePhaseId === event.id}
-                        onClick={() => onSetOverridePhase(event.id)}
-                        label={`${event.emoji} ${event.name}`}
-                        time={event.time}
-                      />
-                    ))}
+                  <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                    {SCHEDULE.map((phase, index) => {
+                      const isActive = index === currentPhaseIndex;
+                      return (
+                        <button
+                          key={phase.id}
+                          onClick={() => { onJumpToPhase(index); setIsOpen(false); }}
+                          className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium transition-all flex items-center gap-2
+                            ${isActive
+                              ? 'dark:bg-cyan-500/10 dark:text-cyan-400 dark:border-cyan-500/20 bg-cyan-50 text-cyan-700 border border-cyan-200'
+                              : 'dark:bg-white/[0.02] dark:text-gray-400 dark:hover:bg-white/5 bg-white text-gray-500 hover:bg-gray-50 border border-transparent hover:border-gray-100'
+                            }`}
+                        >
+                          <span className="text-base">{phase.emoji}</span>
+                          <span className="flex-1">{phase.name}</span>
+                          {phase.isGap && (
+                            <span className="text-[9px] dark:text-gray-600 text-gray-300 font-bold uppercase tracking-wider">gap</span>
+                          )}
+                          {isActive && (
+                            <span className="text-[9px] dark:text-cyan-500 text-cyan-600 font-black uppercase tracking-wider">● live</span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </Section>
 
-                {/* Voice Activation */}
+                {/* ── Voice Activation ── */}
                 <Section title="🎤 Voice Activation">
                   <div className="space-y-3">
                     <div>
@@ -245,12 +230,12 @@ export default function AdminPanel({
                         min="20"
                         max="200"
                         value={threshold}
-                        onChange={(e) => onSetThreshold(Number(e.target.value))}
+                        onChange={e => onSetThreshold(Number(e.target.value))}
                         className="w-full accent-cyan-500"
                       />
                     </div>
                     <button
-                      onClick={onSkipVoice}
+                      onClick={() => { onSkipVoice(); setIsOpen(false); }}
                       className="w-full py-2.5 rounded-xl text-xs font-bold transition-all
                                  dark:bg-white/5 dark:text-gray-400 dark:border-white/[0.06] dark:hover:border-cyan-500/20
                                  bg-gray-50 text-gray-500 border border-gray-200 hover:border-cyan-300"
@@ -260,15 +245,15 @@ export default function AdminPanel({
                   </div>
                 </Section>
 
-                {/* Display Settings */}
+                {/* ── Display Settings ── */}
                 <Section title="📺 Display Settings">
                   <div className="space-y-3">
                     <div>
                       <label className="text-[10px] dark:text-gray-500 text-gray-400 font-bold tracking-wider uppercase mb-2 block">
-                        Timer Zoom Level
+                        Timer Zoom
                       </label>
                       <div className="flex bg-gray-50 dark:bg-white/5 p-1 rounded-xl border border-gray-100 dark:border-white/10 gap-1 overflow-x-auto">
-                        {[1, 1.25, 1.5, 1.75, 2].map((num) => (
+                        {[1, 1.25, 1.5, 1.75, 2].map(num => (
                           <button
                             key={num}
                             onClick={() => onSetTimerZoom(num)}
@@ -286,10 +271,10 @@ export default function AdminPanel({
 
                     <div>
                       <label className="text-[10px] dark:text-gray-500 text-gray-400 font-bold tracking-wider uppercase mb-2 block">
-                        Schedule Zoom Level
+                        Schedule Zoom
                       </label>
                       <div className="flex bg-gray-50 dark:bg-white/5 p-1 rounded-xl border border-gray-100 dark:border-white/10 gap-1 overflow-x-auto">
-                        {[0.8, 1, 1.2, 1.4, 1.6].map((num) => (
+                        {[0.8, 1, 1.2, 1.4, 1.6].map(num => (
                           <button
                             key={num}
                             onClick={() => onSetScheduleZoom(num)}
@@ -303,19 +288,15 @@ export default function AdminPanel({
                           </button>
                         ))}
                       </div>
-                      <p className="text-[9px] dark:text-gray-600 text-gray-400 mt-2 px-1">
-                        Adjust schedule font size if it looks too large/small on your screen.
-                      </p>
                     </div>
                   </div>
                 </Section>
 
                 {/* Info */}
-                <div className="mt-6 p-3 rounded-xl dark:bg-white/[0.02] dark:border-white/[0.04]
-                                bg-gray-50 border border-gray-100">
+                <div className="mt-2 p-3 rounded-xl dark:bg-white/[0.02] dark:border-white/[0.04] bg-gray-50 border border-gray-100">
                   <p className="text-[10px] dark:text-gray-600 text-gray-400 leading-relaxed">
-                    💡 Admin controls for the event organizer. Changes apply in real-time.
-                    Phase override will be reflected on the live schedule display.
+                    💡 Single source of truth: all timers are derived from <code className="font-mono">elapsedTime</code>.
+                    Editing the main timer automatically syncs phase detection. No drift possible.
                   </p>
                 </div>
               </div>
@@ -327,6 +308,10 @@ export default function AdminPanel({
   );
 }
 
+function pad(n) {
+  return String(Math.floor(Math.max(0, n))).padStart(2, '0');
+}
+
 function Section({ title, children }) {
   return (
     <div className="mb-6">
@@ -335,25 +320,5 @@ function Section({ title, children }) {
       </h4>
       {children}
     </div>
-  );
-}
-
-function PhaseOption({ selected, onClick, label, time }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2
-        ${selected
-          ? 'dark:bg-cyan-500/10 dark:text-cyan-400 dark:border-cyan-500/20 bg-cyan-50 text-cyan-700 border border-cyan-200'
-          : 'dark:bg-white/[0.02] dark:text-gray-400 dark:hover:bg-white/5 bg-white text-gray-500 hover:bg-gray-50 border border-transparent'
-        }`}
-    >
-      <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center
-                        ${selected ? 'border-cyan-500' : 'dark:border-gray-600 border-gray-300'}`}>
-        {selected && <span className="w-2 h-2 rounded-full bg-cyan-500" />}
-      </span>
-      {label}
-      {time && <span className="ml-auto text-[9px] dark:text-gray-600 text-gray-300">{time}</span>}
-    </button>
   );
 }

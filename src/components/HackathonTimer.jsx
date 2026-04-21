@@ -1,5 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+function pad(n) {
+  return String(Math.floor(Math.max(0, n))).padStart(2, '0');
+}
+
+function formatPhaseTime(seconds) {
+  if (seconds == null) return null;
+  const s = Math.floor(seconds);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${pad(h)}:${pad(m)}:${pad(sec)}`;
+  return `${pad(m)}:${pad(sec)}`;
+}
 
 function TimeEditModal({ hours, minutes, seconds, onSave, onClose }) {
   const [h, setH] = useState(hours);
@@ -23,10 +37,13 @@ function TimeEditModal({ hours, minutes, seconds, onSave, onClose }) {
         exit={{ scale: 0.9, y: 20 }}
         onClick={e => e.stopPropagation()}
       >
-        <h3 className="text-lg font-bold dark:text-white text-gray-900 mb-4">Edit Timer</h3>
+        <h3 className="text-lg font-bold dark:text-white text-gray-900 mb-1">Edit Remaining Time</h3>
+        <p className="text-[11px] dark:text-gray-500 text-gray-400 mb-4">
+          Sets hackathon elapsed time accordingly. Phase auto-updates.
+        </p>
         <div className="flex gap-3 mb-6">
           {[
-            { label: 'Hours', value: h, set: setH, max: 24 },
+            { label: 'Hours',   value: h, set: setH, max: 24 },
             { label: 'Minutes', value: m, set: setM, max: 59 },
             { label: 'Seconds', value: s, set: setS, max: 59 },
           ].map(({ label, value, set, max }) => (
@@ -72,12 +89,12 @@ export default function HackathonTimer({
   hours, minutes, seconds,
   isRunning, progress,
   onStart, onPause, onReset, onSetTime,
-  phaseInfo, zoom = 1,
+  phaseInfo,
+  zoom = 1,
 }) {
   const [showEdit, setShowEdit] = useState(false);
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark]     = useState(true);
 
-  // Detect theme
   useEffect(() => {
     const check = () => setIsDark(document.documentElement.classList.contains('dark'));
     check();
@@ -86,16 +103,18 @@ export default function HackathonTimer({
     return () => observer.disconnect();
   }, []);
 
-  const pad = (n) => String(n).padStart(2, '0');
+  const timerColor   = isDark ? '#FFFFFF' : '#0F172A';
+  const colonColor   = isDark ? '#06B6D4' : '#0891B2';
+  const mutedColor   = isDark ? 'text-gray-500' : 'text-gray-400';
+  const labelColor   = isDark ? 'text-gray-400' : 'text-gray-500';
 
-  const timerColor = isDark ? '#FFFFFF' : '#0F172A';
-  const colonColor = isDark ? '#06B6D4' : '#0891B2';
-  const mutedColor = isDark ? 'text-gray-500' : 'text-gray-400';
-  const labelColor = isDark ? 'text-gray-400' : 'text-gray-500';
-  const phaseTextColor = isDark ? 'text-cyan-400' : 'text-cyan-700';
+  const { currentPhase, nextPhase, phaseRemaining, isGap } = phaseInfo || {};
+
+  const phaseTimeStr = formatPhaseTime(phaseRemaining);
 
   return (
     <div className="flex flex-col items-center justify-center h-full py-8 px-4">
+
       {/* Label */}
       <div className={`text-center transition-all duration-500 ${zoom > 1 ? 'mb-12' : 'mb-6'}`}>
         <div className="flex items-center gap-2 justify-center mb-1">
@@ -113,12 +132,12 @@ export default function HackathonTimer({
         </div>
       </div>
 
-      {/* Main time display — clean, no animations on digits */}
+      {/* Main digits */}
       <div className="flex flex-col items-center justify-center w-full max-w-full">
         <div className="flex items-center justify-center w-full">
+
           {/* Hours */}
-          <span
-            className="font-extrabold tabular-nums leading-none transition-all duration-300"
+          <span className="font-extrabold tabular-nums leading-none transition-all duration-300"
             style={{
               color: timerColor,
               fontSize: `clamp(${2.5 * zoom}rem, ${9 * zoom}cqw, ${20 * zoom}rem)`,
@@ -129,23 +148,14 @@ export default function HackathonTimer({
             {pad(hours)}
           </span>
 
-          {/* Colon 1 */}
-          <motion.span
-            className="font-extrabold mx-[1%] transition-all duration-300 flex items-center justify-center mb-[1%]"
-            style={{
-              color: colonColor,
-              fontSize: `clamp(${2 * zoom}rem, ${7.5 * zoom}cqw, ${16 * zoom}rem)`,
-              lineHeight: 1,
-            }}
+          <motion.span className="font-extrabold mx-[1%] transition-all duration-300 flex items-center justify-center mb-[1%]"
+            style={{ color: colonColor, fontSize: `clamp(${2 * zoom}rem, ${7.5 * zoom}cqw, ${16 * zoom}rem)`, lineHeight: 1 }}
             animate={isRunning ? { opacity: [1, 0.2, 1] } : {}}
             transition={{ duration: 1, repeat: Infinity }}
-          >
-            :
-          </motion.span>
+          >:</motion.span>
 
           {/* Minutes */}
-          <span
-            className="font-extrabold tabular-nums leading-none transition-all duration-300"
+          <span className="font-extrabold tabular-nums leading-none transition-all duration-300"
             style={{
               color: timerColor,
               fontSize: `clamp(${2.5 * zoom}rem, ${9 * zoom}cqw, ${20 * zoom}rem)`,
@@ -156,23 +166,14 @@ export default function HackathonTimer({
             {pad(minutes)}
           </span>
 
-          {/* Colon 2 */}
-          <motion.span
-            className="font-extrabold mx-[1%] transition-all duration-300 flex items-center justify-center mb-[1%]"
-            style={{
-              color: colonColor,
-              fontSize: `clamp(${2 * zoom}rem, ${7.5 * zoom}cqw, ${16 * zoom}rem)`,
-              lineHeight: 1,
-            }}
+          <motion.span className="font-extrabold mx-[1%] transition-all duration-300 flex items-center justify-center mb-[1%]"
+            style={{ color: colonColor, fontSize: `clamp(${2 * zoom}rem, ${7.5 * zoom}cqw, ${16 * zoom}rem)`, lineHeight: 1 }}
             animate={isRunning ? { opacity: [1, 0.2, 1] } : {}}
             transition={{ duration: 1, repeat: Infinity, delay: 0.5 }}
-          >
-            :
-          </motion.span>
+          >:</motion.span>
 
           {/* Seconds */}
-          <span
-            className="font-extrabold tabular-nums leading-none transition-all duration-300"
+          <span className="font-extrabold tabular-nums leading-none transition-all duration-300"
             style={{
               color: timerColor,
               fontSize: `clamp(${2.5 * zoom}rem, ${9 * zoom}cqw, ${20 * zoom}rem)`,
@@ -184,11 +185,9 @@ export default function HackathonTimer({
           </span>
         </div>
 
-        {/* Labels underneath */}
+        {/* H / M / S labels */}
         <div className={`flex justify-center transition-all duration-500 w-full
-                        ${zoom === 1 ? 'mt-3 gap-[10%]' :
-                          zoom === 2 ? 'mt-6 gap-[12%]' :
-                          'mt-10 gap-[15%]'}`}>
+                        ${zoom === 1 ? 'mt-3 gap-[10%]' : zoom === 2 ? 'mt-6 gap-[12%]' : 'mt-10 gap-[15%]'}`}>
           {['Hours', 'Minutes', 'Seconds'].map(l => (
             <span key={l} className={`font-bold tracking-[0.25em] uppercase transition-all duration-500 ${mutedColor}
                                     ${zoom === 1 ? 'text-[8px] md:text-[1.1cqw]' : zoom === 2 ? 'text-xs md:text-[1.3cqw]' : 'text-base md:text-[1.8cqw]'}`}>
@@ -219,48 +218,93 @@ export default function HackathonTimer({
         </div>
       </div>
 
-      {/* Phase info */}
-      {phaseInfo && (
-        <div className={`text-center space-y-1 transition-all duration-500 ${zoom === 1 ? 'mt-4' : zoom === 2 ? 'mt-8' : 'mt-12'}`}>
-          {phaseInfo.currentPhase && (
-            <div className="flex items-center justify-center gap-2">
-              <span className={`transition-all duration-500 ${zoom === 1 ? 'text-lg' : zoom === 2 ? 'text-2xl' : 'text-4xl'}`}>
-                {phaseInfo.currentPhase.emoji}
-              </span>
-              <span className={`font-bold transition-all duration-500 ${phaseTextColor}
-                               ${zoom === 1 ? 'text-xs' : zoom === 2 ? 'text-base' : 'text-xl'}`}>
-                CURRENT: {phaseInfo.currentPhase.name}
-              </span>
-              {phaseInfo.phaseTimeRemaining != null && (
-                <span className={`font-mono transition-all duration-500 ${mutedColor}
-                                 ${zoom === 1 ? 'text-[10px]' : zoom === 2 ? 'text-xs' : 'text-base'}`}>
-                  ends in {String(Math.floor(phaseInfo.phaseTimeRemaining / 60)).padStart(2, '0')}m {String(phaseInfo.phaseTimeRemaining % 60).padStart(2, '0')}s
-                </span>
-              )}
-            </div>
-          )}
-          {phaseInfo.nextPhase && (
-            <div className="flex items-center justify-center gap-2">
-              <span className={`transition-all duration-500 ${zoom === 1 ? 'text-sm' : zoom === 2 ? 'text-lg' : 'text-2xl'}`}>
-                {phaseInfo.nextPhase.emoji}
-              </span>
-              <span className={`transition-all duration-500 ${mutedColor}
-                               ${zoom === 1 ? 'text-[11px]' : zoom === 2 ? 'text-sm' : 'text-lg'}`}>
-                NEXT: {phaseInfo.nextPhase.name}
-                {phaseInfo.phaseTimeRemaining != null && !phaseInfo.currentPhase && (
-                  <span className="ml-1 text-cyan-600 dark:text-cyan-500/70">
-                    in {Math.floor(phaseInfo.phaseTimeRemaining / 60)}m
-                  </span>
-                )}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Phase info - POLISHED FOR PROJECTOR */}
+      <div className={`text-center transition-all duration-500 w-full flex flex-col items-center
+                      ${zoom === 1 ? 'mt-8 space-y-4' : zoom === 2 ? 'mt-12 space-y-6' : 'mt-16 space-y-8'}`}>
 
-      {/* NO buttons here — controls moved to admin panel */}
+        {/* GAP banner */}
+        {isGap && (
+          <motion.div
+            className="flex items-center justify-center gap-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <span className={`transition-all duration-500 ${zoom === 1 ? 'text-2xl' : zoom === 2 ? 'text-4xl' : 'text-5xl'}`}>
+              🚀
+            </span>
+            <motion.span 
+              className={`font-black tracking-wide transition-all duration-500 
+                         ${isDark ? 'text-[#EAF9FF]' : 'text-cyan-900'}
+                         ${zoom === 1 ? 'text-xl' : zoom === 2 ? 'text-3xl' : 'text-4xl'}`}
+              style={{
+                textShadow: isDark ? '0 0 10px rgba(34, 211, 238, 0.6)' : 'none'
+              }}
+              animate={{ opacity: [1, 0.7, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              Hackathon in Progress
+            </motion.span>
+          </motion.div>
+        )}
 
-      {/* Edit modal (can still be triggered from admin) */}
+        {/* Current phase */}
+        {!isGap && currentPhase && (
+          <div className="flex items-center justify-center gap-3">
+            <span className={`transition-all duration-500 ${zoom === 1 ? 'text-2xl' : zoom === 2 ? 'text-4xl' : 'text-5xl'}`}>
+              {currentPhase.emoji}
+            </span>
+            <div className="flex flex-col md:flex-row items-center gap-2">
+              <span className={`font-black uppercase tracking-wider transition-all duration-500
+                               ${isDark ? 'text-[#EAF9FF]' : 'text-gray-900'}
+                               ${zoom === 1 ? 'text-xl' : zoom === 2 ? 'text-3xl' : 'text-4xl'}`}>
+                CURRENT:
+              </span>
+              <span className={`font-black tracking-wide transition-all duration-500 
+                               ${isDark ? 'text-[#22D3EE]' : 'text-cyan-600'}
+                               ${zoom === 1 ? 'text-xl' : zoom === 2 ? 'text-3xl' : 'text-4xl'}`}
+                    style={{
+                      textShadow: isDark ? '0 0 10px rgba(34, 211, 238, 0.6)' : 'none'
+                    }}
+              >
+                {currentPhase.name}
+              </span>
+            </div>
+            {phaseTimeStr && (
+              <span className={`font-mono font-bold transition-all duration-500 ml-2
+                               ${isDark ? 'text-gray-300' : 'text-gray-500'}
+                               ${zoom === 1 ? 'text-sm' : zoom === 2 ? 'text-xl' : 'text-2xl'}`}>
+                (ends in {phaseTimeStr})
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Next phase */}
+        {nextPhase && (
+          <div className="flex items-center justify-center gap-2">
+            <span className={`transition-all duration-500 ${zoom === 1 ? 'text-lg' : zoom === 2 ? 'text-2xl' : 'text-3xl'}`}>
+              {nextPhase.emoji}
+            </span>
+            <span className={`font-bold transition-all duration-500 uppercase tracking-widest
+                             ${isDark ? 'text-[#EAF9FF]' : 'text-gray-800'}
+                             ${zoom === 1 ? 'text-lg' : zoom === 2 ? 'text-2xl' : 'text-3xl'}`}>
+              NEXT: 
+            </span>
+            <span className={`font-bold transition-all duration-500 tracking-wide ml-1
+                             ${isDark ? 'text-[#22D3EE]' : 'text-cyan-600'}
+                             ${zoom === 1 ? 'text-lg' : zoom === 2 ? 'text-2xl' : 'text-3xl'}`}
+                  style={{
+                    textShadow: isDark ? '0 0 10px rgba(34, 211, 238, 0.3)' : 'none'
+                  }}
+            >
+              {nextPhase.name}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Edit modal */}
       <AnimatePresence>
         {showEdit && (
           <TimeEditModal

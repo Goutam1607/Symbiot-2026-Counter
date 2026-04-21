@@ -2,24 +2,27 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SCHEDULE } from '../utils/schedule';
 
-function PhaseCountdown({ seconds }) {
-  if (seconds == null) return null;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  const h = Math.floor(m / 60);
-  const rm = m % 60;
-
-  return (
-    <span className="tabular-nums font-mono">
-      {h > 0 ? `${String(h).padStart(2, '0')}:` : ''}{String(rm).padStart(2, '0')}:{String(s).padStart(2, '0')}
-    </span>
-  );
+function pad(n) {
+  return String(Math.floor(Math.max(0, n))).padStart(2, '0');
 }
 
-function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaining, total, zoom = 1 }) {
+function formatTime(seconds) {
+  if (seconds == null) return '';
+  const s = Math.floor(seconds);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${pad(h)}:${pad(m)}:${pad(sec)}`;
+  return `${pad(m)}:${pad(sec)}`;
+}
+
+function FlowNode({ phase, status, index, total, isExpanded, onToggle, phaseRemaining, zoom = 1 }) {
   const isCurrent = status === 'current';
-  const isNext = status === 'next';
-  const isPast = status === 'past';
+  const isNext    = status === 'next';
+  const isPast    = status === 'past';
+
+  // GAP phase: never show as current (no highlight)
+  const showAsActive = isCurrent && !phase.isGap;
 
   return (
     <motion.div
@@ -31,14 +34,11 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
     >
       {/* Timeline line + dot */}
       <div className="flex flex-col items-center flex-shrink-0 relative" style={{ width: 24 * zoom }}>
-        {index > 0 && (
-          <div className="w-[1px] h-4 dark:bg-white/[0.06] bg-gray-200" />
-        )}
+        {index > 0 && <div className="w-[1px] h-4 dark:bg-white/[0.06] bg-gray-200" />}
         {index === 0 && <div className="h-4" />}
 
-        {/* Dot */}
         <div className="relative">
-          {isCurrent && (
+          {showAsActive && (
             <motion.div
               className="absolute -inset-2 rounded-full dark:bg-cyan-500/20 bg-cyan-500/15"
               animate={{ scale: [1, 1.6, 1], opacity: [0.4, 0.1, 0.4] }}
@@ -54,10 +54,10 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
           )}
           <div
             className={`w-2.5 h-2.5 rounded-full relative z-10 transition-all duration-300
-              ${isCurrent ? 'bg-cyan-500 dark:shadow-[0_0_12px_rgba(6,182,212,0.5)] shadow-[0_0_8px_rgba(6,182,212,0.3)]' :
-                'dark:bg-white/10 bg-gray-300'
-              }
-            `}
+              ${showAsActive
+                ? 'bg-cyan-500 dark:shadow-[0_0_12px_rgba(6,182,212,0.5)] shadow-[0_0_8px_rgba(6,182,212,0.3)]'
+                : 'dark:bg-white/10 bg-gray-300'
+              }`}
             style={{ width: 8 * zoom, height: 8 * zoom }}
           />
         </div>
@@ -67,85 +67,102 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
         )}
       </div>
 
-      {/* Content */}
+      {/* Content card */}
       <motion.div
         className={`flex-1 mb-2 rounded-xl transition-all duration-500 cursor-pointer overflow-hidden
-          ${isCurrent
+          ${showAsActive
             ? 'dark:bg-[rgba(6,182,212,0.18)] dark:border-cyan-500/30 bg-[#ECFEFF] border-l-[4px] border-cyan-500 border-t border-r border-b border-t-cyan-100/50 border-r-cyan-100/50 border-b-cyan-100/50 shadow-glow scale-[1.02]'
+            : phase.isGap && isCurrent
+            ? 'dark:bg-white/[0.04] dark:border-white/[0.04] bg-gray-50 border border-gray-100 opacity-60'
             : 'dark:bg-[rgba(6,182,212,0.08)] dark:border-white/[0.06] bg-white border border-gray-100 shadow-sm hover:border-cyan-500/20'
           }
         `}
         style={{ padding: `${0.75 * zoom}rem`, marginLeft: '-4px' }}
         onClick={onToggle}
-        whileHover={!isPast ? { scale: isCurrent ? 1.02 : 1.03, x: 4, transition: { duration: 0.2 } } : {}}
-        animate={isCurrent ? {
+        whileHover={!isPast ? { scale: showAsActive ? 1.02 : 1.03, x: 4, transition: { duration: 0.2 } } : {}}
+        animate={showAsActive ? {
           boxShadow: ['0 0 10px rgba(6,182,212,0.2)', '0 0 20px rgba(6,182,212,0.4)', '0 0 10px rgba(6,182,212,0.2)']
         } : {}}
         transition={{ duration: 0.3 }}
       >
-        <div className="flex items-center gap-2">
-          <span style={{ fontSize: `${1.2 * zoom}rem` }}>{event.emoji}</span>
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5" style={{ fontSize: `${1.2 * zoom}rem` }}>{phase.emoji}</span>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span 
-                className={`font-bold truncate ${isCurrent ? 'dark:text-cyan-400 text-cyan-700' : 'dark:text-white text-gray-900'}`}
-                style={{ fontSize: `${1.1 * zoom}rem` }}
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`font-bold truncate ${showAsActive ? 'dark:text-cyan-400 text-cyan-700' : 'dark:text-white text-gray-900'}`}
+                  style={{ fontSize: `${1.1 * zoom}rem` }}
+                >
+                  {phase.name}
+                </span>
+                {showAsActive && (
+                  <span
+                    className="px-2 py-0.5 rounded font-black tracking-wider uppercase dark:bg-cyan-500/20 dark:text-cyan-400 bg-cyan-100 text-cyan-700"
+                    style={{ fontSize: `${8 * zoom}px` }}
+                  >
+                    Live
+                  </span>
+                )}
+                {isNext && (
+                  <span
+                    className="px-2 py-0.5 rounded font-black tracking-wider uppercase dark:bg-amber-500/20 dark:text-amber-400 bg-amber-100 text-amber-700"
+                    style={{ fontSize: `${8 * zoom}px` }}
+                  >
+                    Next
+                  </span>
+                )}
+                {phase.isGap && isCurrent && (
+                  <span
+                    className="px-2 py-0.5 rounded font-black tracking-wider uppercase dark:bg-gray-500/20 dark:text-gray-400 bg-gray-100 text-gray-500"
+                    style={{ fontSize: `${8 * zoom}px` }}
+                  >
+                    Coding
+                  </span>
+                )}
+              </div>
+
+              {/* Phase countdown — inline with title */}
+              {showAsActive && phaseRemaining != null && (
+                <div className="flex items-center gap-1.5 flex-shrink-0" style={{ fontSize: `${0.85 * zoom}rem` }}>
+                  <span className="dark:text-gray-400 text-gray-500 font-bold uppercase tracking-wider text-[9px] mt-0.5">
+                    ⏱ Ends in:
+                  </span>
+                  <span
+                    className="font-black tabular-nums dark:text-[#22D3EE] text-cyan-700"
+                    style={{
+                      textShadow: '0 0 8px rgba(34, 211, 238, 0.6)'
+                    }}
+                  >
+                    {formatTime(phaseRemaining)}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            {/* Show real time range */}
+            <div className="flex items-center justify-between mt-1">
+              <span
+                className="font-bold tracking-wide dark:text-[#A5F3FC] text-cyan-700"
+                style={{ fontSize: `${0.95 * zoom}rem` }}
               >
-                {event.name}
+                {phase.time}
               </span>
-              {isCurrent && (
-                <span 
-                  className="px-2 py-0.5 rounded font-black tracking-wider uppercase dark:bg-cyan-500/20 dark:text-cyan-400 bg-cyan-100 text-cyan-700"
-                  style={{ fontSize: `${8 * zoom}px` }}
+
+              {!isPast && (
+                <motion.span
+                  className="dark:text-gray-600 text-gray-300 flex-shrink-0 cursor-pointer"
+                  style={{ fontSize: `${12 * zoom}px` }}
+                  animate={{ rotate: isExpanded ? 180 : 0 }}
                 >
-                  Live
-                </span>
-              )}
-              {isNext && (
-                <span 
-                  className="px-2 py-0.5 rounded font-black tracking-wider uppercase dark:bg-amber-500/20 dark:text-amber-400 bg-amber-100 text-amber-700"
-                  style={{ fontSize: `${8 * zoom}px` }}
-                >
-                  Next
-                </span>
+                  ▾
+                </motion.span>
               )}
             </div>
-            <span 
-              className={`font-medium ${isCurrent ? 'dark:text-cyan-300/60 text-cyan-600' : 'dark:text-[#CBD5F5] text-gray-500'}`}
-              style={{ fontSize: `${0.85 * zoom}rem` }}
-            >
-              {event.time}
-            </span>
           </div>
-
-          {isCurrent && phaseTimeRemaining != null && (
-            <div className="text-right flex-shrink-0">
-              <div 
-                className="dark:text-gray-500 text-gray-400 font-bold tracking-wider uppercase"
-                style={{ fontSize: `${7 * zoom}px` }}
-              >
-                Ends in
-              </div>
-              <div 
-                className="dark:text-cyan-400 text-cyan-700 font-black"
-                style={{ fontSize: `${0.75 * zoom}rem` }}
-              >
-                <PhaseCountdown seconds={phaseTimeRemaining} />
-              </div>
-            </div>
-          )}
-
-          {!isPast && (
-            <motion.span
-              className="dark:text-gray-600 text-gray-300 flex-shrink-0"
-              style={{ fontSize: `${10 * zoom}px` }}
-              animate={{ rotate: isExpanded ? 180 : 0 }}
-            >
-              ▾
-            </motion.span>
-          )}
         </div>
 
+        {/* Expanded detail */}
         <AnimatePresence>
           {isExpanded && !isPast && (
             <motion.div
@@ -155,19 +172,19 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
             >
-              <div className="mt-2 pt-2 dark:border-white/[0.05] border-gray-100 border-t">
-                <p 
-                  className="dark:text-gray-400 text-gray-500 leading-relaxed"
-                  style={{ fontSize: `${0.75 * zoom}rem` }}
+              <div className="mt-3 pt-3 dark:border-white/[0.05] border-gray-100 border-t">
+                <p
+                  className="dark:text-gray-300 text-gray-600 leading-relaxed font-medium"
+                  style={{ fontSize: `${0.85 * zoom}rem` }}
                 >
-                  {event.description || `${event.name} — ${event.time}`}
+                  {phase.description || phase.name}
                 </p>
-                {event.location && (
-                  <p 
-                    className="dark:text-gray-500 text-gray-400 mt-1"
-                    style={{ fontSize: `${0.7 * zoom}rem` }}
+                {phase.location && (
+                  <p
+                    className="dark:text-cyan-500/70 text-cyan-600/70 mt-1.5 font-bold tracking-wide"
+                    style={{ fontSize: `${0.75 * zoom}rem` }}
                   >
-                    📍 {event.location}
+                    📍 {phase.location}
                   </p>
                 )}
               </div>
@@ -179,96 +196,113 @@ function FlowNode({ event, status, index, isExpanded, onToggle, phaseTimeRemaini
   );
 }
 
-export default function LiveScheduleFlow({ currentPhase, nextPhase, phaseTimeRemaining, overridePhaseId, zoom = 1 }) {
+export default function LiveScheduleFlow({
+  elapsedTime,
+  currentPhase,
+  nextPhase,
+  phaseRemaining,
+  zoom = 1,
+}) {
   const [expandedId, setExpandedId] = useState(null);
-  const scrollRef = useRef(null);
-  const activeRef = useRef(null);
-  const allEvents = SCHEDULE.flatMap(d => d.events.map(e => ({
-    ...e,
-    description: getDescription(e.id),
-    location: getLocation(e.id),
-  })));
+  const scrollRef  = useRef(null);
+  const activeRef  = useRef(null);
 
+  // Filter out GAPs for the timeline view so they don't clutter the display
+  // Wait, if we filter them out, we won't see them on the timeline. 
+  // Let's keep them so the timeline makes sense, or maybe user wants them?
+  // User just says: "Each event should show: Event Name, Time Range (clearly visible)".
+  const displayEvents = SCHEDULE.filter(phase => !phase.isGap);
+
+  // Auto-scroll to active phase
   useEffect(() => {
     if (activeRef.current && scrollRef.current) {
       const container = scrollRef.current;
       const el = activeRef.current;
-      const containerRect = container.getBoundingClientRect();
-      const scrollTop = el.offsetTop - container.offsetTop - containerRect.height / 3;
+      const scrollTop = el.offsetTop - container.offsetTop - container.getBoundingClientRect().height / 3;
       container.scrollTo({ top: Math.max(0, scrollTop), behavior: 'smooth' });
     }
   }, [currentPhase?.id]);
 
-  const getStatus = (event) => {
-    // Manual Admin Override
-    if (overridePhaseId && event.id === overridePhaseId) return 'current';
-    
-    // Automatic Detection
-    if (!overridePhaseId && currentPhase && event.id === currentPhase.id) return 'current';
-    
-    // Next Detection
-    if (nextPhase && event.id === nextPhase.id) return 'next';
-    
+  const getStatus = (phase) => {
+    if (currentPhase && phase.id === currentPhase.id) return 'current';
+    if (nextPhase    && phase.id === nextPhase.id)    return 'next';
     return 'none';
   };
+
+  const isGap        = currentPhase?.isGap;
+  const displayCurrent = isGap ? null : currentPhase;
+  const displayNext    = nextPhase;
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-4 pt-6 pb-3">
-        <h3 className="text-sm font-bold tracking-[0.2em] uppercase dark:text-gray-400 text-gray-500 mb-1">
+      <div className="px-5 pt-6 pb-4">
+        <h3 className="text-sm font-bold tracking-[0.2em] uppercase dark:text-gray-400 text-gray-500 mb-2">
           Live Schedule
         </h3>
-        {currentPhase && (
+
+        {isGap && (
           <motion.div
             className="flex items-center gap-2"
-            key={currentPhase.id}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <span className="text-xl">{currentPhase.emoji}</span>
+            <span className="text-xl">🚀</span>
+            <span className="text-sm font-bold dark:text-gray-300 text-gray-600">Hackathon in Progress…</span>
+          </motion.div>
+        )}
+
+        {displayCurrent && (
+          <motion.div
+            className="flex items-center gap-3"
+            key={displayCurrent.id}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <span className="text-2xl">{displayCurrent.emoji}</span>
             <div>
-              <span className="text-sm font-bold dark:text-cyan-400 text-cyan-700">{currentPhase.name}</span>
-              {phaseTimeRemaining != null && (
-                <span className="text-xs dark:text-gray-500 text-gray-400 ml-2 font-mono">
-                  ends in <PhaseCountdown seconds={phaseTimeRemaining} />
+              <span className="text-base font-black dark:text-cyan-400 text-cyan-700 tracking-wide">{displayCurrent.name}</span>
+              {phaseRemaining != null && (
+                <span className="text-sm dark:text-gray-400 text-gray-500 ml-2 font-mono tabular-nums font-bold">
+                  ends in {formatTime(phaseRemaining)}
                 </span>
               )}
             </div>
           </motion.div>
         )}
-        {nextPhase && (
-          <div className="text-[11px] dark:text-gray-500 text-gray-400 mt-1 flex items-center gap-1">
+
+        {displayNext && (
+          <div className="text-xs font-bold tracking-wide dark:text-cyan-200/50 text-cyan-600/60 mt-1 flex items-center gap-2">
             <span>→</span>
-            <span>{nextPhase.emoji} {nextPhase.name}</span>
-            <span className="dark:text-cyan-500/50 text-cyan-600/60">({nextPhase.time})</span>
+            <span>{displayNext.emoji} {displayNext.name}</span>
+            <span className="dark:text-[#A5F3FC]/70 text-cyan-700/70">({displayNext.time})</span>
           </div>
         )}
       </div>
 
       {/* Divider */}
-      <div className="mx-4 h-[1px] dark:bg-gradient-to-r dark:from-cyan-500/20 dark:via-cyan-500/10 dark:to-transparent
-                      bg-gradient-to-r from-cyan-500/15 via-gray-200 to-transparent" />
+      <div className="mx-5 h-[1px] dark:bg-gradient-to-r dark:from-cyan-500/30 dark:via-cyan-500/10 dark:to-transparent
+                      bg-gradient-to-r from-cyan-500/20 via-gray-200 to-transparent" />
 
-      {/* Scrollable timeline */}
+      {/* Scrollable phase list */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-3 space-y-0 relative"
+        className="flex-1 overflow-y-auto px-5 py-4 space-y-0 relative"
         style={{ scrollbarWidth: 'thin' }}
       >
-        {allEvents.map((event, index) => {
-          const status = getStatus(event);
+        {displayEvents.map((phase, index) => {
+          const status = getStatus(phase);
           const isCurrent = status === 'current';
           return (
-            <div key={event.id} ref={isCurrent ? activeRef : undefined}>
+            <div key={phase.id} ref={isCurrent ? activeRef : undefined}>
               <FlowNode
-                event={event}
+                phase={phase}
                 status={status}
                 index={index}
-                total={allEvents.length}
-                isExpanded={expandedId === event.id}
-                onToggle={() => setExpandedId(expandedId === event.id ? null : event.id)}
-                phaseTimeRemaining={isCurrent ? phaseTimeRemaining : null}
+                total={displayEvents.length}
+                isExpanded={expandedId === phase.id}
+                onToggle={() => setExpandedId(expandedId === phase.id ? null : phase.id)}
+                phaseRemaining={isCurrent ? phaseRemaining : null}
                 zoom={zoom}
               />
             </div>
@@ -276,33 +310,33 @@ export default function LiveScheduleFlow({ currentPhase, nextPhase, phaseTimeRem
         })}
       </div>
 
-      {/* Next Event Indicator (Bottom) — Scaled up for better visibility */}
-      {nextPhase && (
-        <div 
-          className="px-5 py-4 dark:bg-cyan-500/10 bg-cyan-50 border-t dark:border-white/10 border-cyan-100 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
-          style={{ padding: `${1 * zoom}rem ${1.25 * zoom}rem` }}
+      {/* Bottom: Up Next banner */}
+      {displayNext && (
+        <div
+          className="px-6 py-5 dark:bg-cyan-500/10 bg-cyan-50 border-t dark:border-white/10 border-cyan-100 shadow-[0_-4px_25px_rgba(0,0,0,0.15)]"
+          style={{ padding: `${1.25 * zoom}rem ${1.5 * zoom}rem` }}
         >
           <div className="flex items-center justify-between">
-            <span 
+            <span
               className="font-black tracking-[0.2em] uppercase dark:text-cyan-500/80 text-cyan-600/80"
-              style={{ fontSize: `${0.75 * zoom}rem` }}
+              style={{ fontSize: `${0.85 * zoom}rem` }}
             >
               Up Next
             </span>
-            <div className="flex items-center gap-3">
-              <span style={{ fontSize: `${1.5 * zoom}rem` }}>{nextPhase.emoji}</span>
+            <div className="flex items-center gap-4">
+              <span style={{ fontSize: `${1.8 * zoom}rem` }}>{displayNext.emoji}</span>
               <div className="flex flex-col items-end">
-                <span 
-                  className="font-black dark:text-white text-gray-900 leading-tight"
-                  style={{ fontSize: `${1 * zoom}rem` }}
+                <span
+                  className="font-black dark:text-white text-gray-900 leading-tight mb-0.5"
+                  style={{ fontSize: `${1.1 * zoom}rem` }}
                 >
-                  {nextPhase.name}
+                  {displayNext.name}
                 </span>
-                <span 
-                  className="font-bold dark:text-cyan-400 text-cyan-600 tracking-wide uppercase"
-                  style={{ fontSize: `${0.7 * zoom}rem` }}
+                <span
+                  className="font-black dark:text-[#A5F3FC] text-cyan-600 tracking-wide uppercase"
+                  style={{ fontSize: `${0.8 * zoom}rem` }}
                 >
-                  Starting at {nextPhase.time.split(' – ')[0]}
+                  {displayNext.time}
                 </span>
               </div>
             </div>
@@ -311,32 +345,4 @@ export default function LiveScheduleFlow({ currentPhase, nextPhase, phaseTimeRem
       )}
     </div>
   );
-}
-
-function getDescription(id) {
-  const map = {
-    reg: 'Check in with your team, collect ID cards, swag kits, and workspace assignments.',
-    inaug: 'Opening ceremony with keynote speakers, rules overview, and official hackathon kickoff.',
-    design: 'Phase I — Brainstorm, design solutions, create wireframes and technical architecture.',
-    lunch1: 'Recharge with a freshly prepared meal. Network with other teams.',
-    tea1: 'Quick refreshment break with chai, coffee, and snacks.',
-    dinner: 'Evening meal break before the intense night coding session.',
-    judge1: 'Phase II evaluation — Present your progress and get feedback from judges.',
-    latenight: 'Midnight fuel! Hot tea and snacks for the night owls.',
-    breakfast: 'Start your final day with a hearty breakfast before the final sprint.',
-    final: 'Final evaluation — Present your completed project and demo your working prototype.',
-    lunch2: 'Post-judgement lunch. Relax while judges deliberate.',
-    vale: 'Closing ceremony — Winner announcements, prizes, certificates, and group photo!',
-  };
-  return map[id] || '';
-}
-
-function getLocation(id) {
-  const map = {
-    reg: 'Main Entrance Hall', inaug: 'Auditorium', design: 'Hack Arena',
-    lunch1: 'Dining Hall', tea1: 'Dining Hall', dinner: 'Dining Hall',
-    judge1: 'Judging Arena', latenight: 'Dining Hall', breakfast: 'Dining Hall',
-    final: 'Judging Arena', lunch2: 'Dining Hall', vale: 'Auditorium',
-  };
-  return map[id] || '';
 }
