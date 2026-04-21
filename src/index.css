@@ -262,3 +262,36 @@ body {
 :not(.dark) .shadow-glow {
   box-shadow: 0 4px 20px rgba(6, 182, 212, 0.15);
 }
+
+/* ========================= */
+/* Scream Activation Text    */
+/* ========================= */
+.scream-container {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.scream-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.scream-text {
+  white-space: nowrap;
+  font-size: clamp(40px, 10vw, 160px);
+  line-height: 1.1;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .scream-text {
+    font-size: clamp(32px, 15vw, 80px);
+  }
+}
