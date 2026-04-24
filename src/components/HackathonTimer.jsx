@@ -41,27 +41,19 @@ function TimeEditModal({ hours, minutes, seconds, onSave, onClose }) {
         <p className="text-[11px] dark:text-gray-500 text-gray-400 mb-4">
           Sets hackathon elapsed time accordingly. Phase auto-updates.
         </p>
-        <div className="flex gap-3 mb-6">
-          {[
-            { label: 'Hours',   value: h, set: setH, max: 24 },
-            { label: 'Minutes', value: m, set: setM, max: 59 },
-            { label: 'Seconds', value: s, set: setS, max: 59 },
-          ].map(({ label, value, set, max }) => (
-            <div key={label} className="flex-1">
-              <label className="block text-[10px] dark:text-gray-500 text-gray-400 font-bold tracking-widest uppercase mb-1">{label}</label>
-              <input
-                type="number"
-                min={0}
-                max={max}
-                value={value}
-                onChange={e => set(Math.max(0, Math.min(max, parseInt(e.target.value) || 0)))}
-                className="w-full px-3 py-3 rounded-xl text-center text-2xl font-black outline-none transition-all
-                           dark:bg-white/5 dark:border-white/10 dark:text-white
-                           bg-gray-50 border border-gray-200 text-gray-900
-                           focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
-              />
-            </div>
-          ))}
+        <div className="flex flex-col gap-3 mb-6">
+          <label className="block text-[10px] dark:text-gray-500 text-gray-400 font-bold tracking-widest uppercase">
+            End Date & Time
+          </label>
+          <input
+            type="datetime-local"
+            value={h} // using 'h' state for the datetime string
+            onChange={e => setH(e.target.value)}
+            className="w-full px-3 py-3 rounded-xl text-center text-sm font-black outline-none transition-all
+                       dark:bg-white/5 dark:border-white/10 dark:text-white
+                       bg-gray-50 border border-gray-200 text-gray-900
+                       focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+          />
         </div>
         <div className="flex gap-2">
           <button
@@ -73,11 +65,25 @@ function TimeEditModal({ hours, minutes, seconds, onSave, onClose }) {
             Cancel
           </button>
           <button
-            onClick={() => { onSave(h, m, s); onClose(); }}
+            onClick={() => {
+              if (!h) return;
+              const targetDate = new Date(h);
+              const remainingMs = targetDate.getTime() - Date.now();
+              if (remainingMs <= 0) {
+                alert('End time must be in the future!');
+                return;
+              }
+              const remainingSeconds = Math.floor(remainingMs / 1000);
+              const newH = Math.floor(remainingSeconds / 3600);
+              const newM = Math.floor((remainingSeconds % 3600) / 60);
+              const newS = Math.floor(remainingSeconds % 60);
+              onSave(newH, newM, newS);
+              onClose();
+            }}
             className="flex-1 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 text-white text-sm font-bold
                        hover:shadow-glow transition-all"
           >
-            Set Time
+            Set End Time
           </button>
         </div>
       </motion.div>
@@ -298,7 +304,7 @@ export default function HackathonTimer({
                     textShadow: isDark ? '0 0 10px rgba(34, 211, 238, 0.3)' : 'none'
                   }}
             >
-              {nextPhase.name}
+              {nextPhase.name}{isGap && phaseTimeStr && ` in ${phaseTimeStr}`}
             </span>
           </div>
         )}

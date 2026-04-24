@@ -146,42 +146,44 @@ export default function AdminPanel({
                     ))}
                   </div>
 
-                  {/* Manual time input */}
+                  {/* End time input */}
                   <div className="dark:bg-white/[0.02] bg-gray-50 rounded-xl p-3 border dark:border-white/[0.05] border-gray-100">
                     <p className="text-[10px] dark:text-gray-500 text-gray-400 font-bold tracking-wider uppercase mb-2">
-                      Set Remaining Time
+                      Set End Date & Time
                     </p>
-                    <div className="flex gap-2 items-center">
-                      {[
-                        { ph: 'HH', val: editH, set: setEditH, max: 24 },
-                        { ph: 'MM', val: editM, set: setEditM, max: 59 },
-                        { ph: 'SS', val: editS, set: setEditS, max: 59 },
-                      ].map(({ ph, val, set, max }, i) => (
-                        <div key={ph} className="flex-1 flex items-center gap-1">
-                          <input
-                            type="number"
-                            placeholder={ph}
-                            min={0}
-                            max={max}
-                            value={val}
-                            onChange={e => set(e.target.value)}
-                            className="w-full px-2 py-2 rounded-lg text-center text-sm font-black outline-none
-                                       dark:bg-white/5 dark:border-white/10 dark:text-white
-                                       bg-white border border-gray-200 text-gray-900
-                                       focus:border-cyan-500"
-                          />
-                          {i < 2 && <span className="dark:text-gray-600 text-gray-300 font-bold">:</span>}
-                        </div>
-                      ))}
+                    <div className="flex gap-2 flex-col xl:flex-row items-center">
+                      <input
+                        type="datetime-local"
+                        value={editH}
+                        onChange={e => setEditH(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg text-xs font-black outline-none
+                                   dark:bg-white/5 dark:border-white/10 dark:text-white
+                                   bg-white border border-gray-200 text-gray-900
+                                   focus:border-cyan-500"
+                      />
                       <button
-                        onClick={handleSetTime}
-                        className="px-3 py-2 rounded-lg text-xs font-bold bg-cyan-500 text-white hover:bg-cyan-400 transition-all"
+                        onClick={() => {
+                          if (!editH) return;
+                          const targetDate = new Date(editH);
+                          const remainingMs = targetDate.getTime() - Date.now();
+                          if (remainingMs <= 0) {
+                            alert('End time must be in the future!');
+                            return;
+                          }
+                          const remainingSeconds = Math.floor(remainingMs / 1000);
+                          const newH = Math.floor(remainingSeconds / 3600);
+                          const newM = Math.floor((remainingSeconds % 3600) / 60);
+                          const newS = Math.floor(remainingSeconds % 60);
+                          onSetTime(newH, newM, newS);
+                          setEditH('');
+                        }}
+                        className="w-full xl:w-auto px-4 py-2 rounded-lg text-xs font-bold bg-cyan-500 text-white hover:bg-cyan-400 transition-all whitespace-nowrap"
                       >
-                        Set
+                        Set End Time
                       </button>
                     </div>
                     <p className="text-[9px] dark:text-gray-600 text-gray-400 mt-1.5">
-                      Phase auto-updates after setting.
+                      Automatically calculates remaining time to precisely hit 00:00:00 at the target date.
                     </p>
                   </div>
                 </Section>

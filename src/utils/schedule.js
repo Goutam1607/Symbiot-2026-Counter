@@ -20,10 +20,13 @@ export const SCHEDULE = [
 
   { id: 'gap2', emoji: '⏳', name: 'GAP', duration: 2 * 60 * 60, time: '5:00 PM – 7:00 PM', isGap: true },
 
-  { id: 'dinner', emoji: '🍛', name: 'Dinner', duration: 1 * 60 * 60, time: '7:00 PM – 8:00 PM', description: 'Evening meal break before the intense night coding session.', location: 'Dining Hall' },
-  { id: 'judge2', emoji: '⚖️', name: 'Judgement Round 2', duration: 1 * 60 * 60, time: '7:30 PM – 8:30 PM', description: 'Night evaluation round — demo your working build to the judges.', location: 'Judging Arena' },
+  { id: 'judge2', emoji: '⚖️', name: 'Judgement Round 2', duration: 1 * 60 * 60, time: '7:00 PM – 8:00 PM', description: 'Night evaluation round — demo your working build to the judges.', location: 'Judging Arena' },
 
-  { id: 'gap3', emoji: '⏳', name: 'GAP', duration: 3 * 60 * 60, time: '8:30 PM – 12:00 AM', isGap: true },
+  { id: 'gap_dinner', emoji: '⏳', name: 'GAP', duration: 0.5 * 60 * 60, time: '8:00 PM – 8:30 PM', isGap: true },
+
+  { id: 'dinner', emoji: '🍛', name: 'Dinner', duration: 1 * 60 * 60, time: '8:30 PM – 9:30 PM', description: 'Evening meal break before the intense night coding session.', location: 'Dining Hall' },
+
+  { id: 'gap3', emoji: '⏳', name: 'GAP', duration: 2.5 * 60 * 60, time: '9:30 PM – 12:00 AM', isGap: true },
 
   { id: 'midtea', emoji: '🌙', name: 'Midnight Tea', duration: 30 * 60, time: '12:00 AM – 12:30 AM', description: 'Midnight fuel! Hot tea and snacks for the night owls.', location: 'Dining Hall' },
 
@@ -31,9 +34,9 @@ export const SCHEDULE = [
 
   { id: 'breakfast', emoji: '🥐', name: 'Breakfast', duration: 1 * 60 * 60, time: '8:00 AM – 9:00 AM', description: 'Start your final day with a hearty breakfast before the final sprint.', location: 'Dining Hall' },
 
-  { id: 'gap5', emoji: '⏳', name: 'GAP', duration: 0.5 * 60 * 60, time: '9:00 AM – 9:30 AM', isGap: true },
+  { id: 'gap5', emoji: '⏳', name: 'GAP', duration: 2 * 60 * 60, time: '9:00 AM – 11:00 AM', isGap: true },
 
-  { id: 'final', emoji: '🏆', name: 'Final Judgement', duration: 3.5 * 60 * 60, time: '9:30 AM – 1:00 PM', description: 'Final evaluation — Present your completed project and demo your working prototype.', location: 'Judging Arena' },
+  { id: 'final', emoji: '🏆', name: 'Final Judgement', duration: 2 * 60 * 60, time: '11:00 AM – 1:00 PM', description: 'Final evaluation — Present your completed project and demo your working prototype.', location: 'Judging Arena' },
   { id: 'lunch2', emoji: '🍽️', name: 'Lunch', duration: 1 * 60 * 60, time: '1:00 PM – 2:00 PM', description: 'Post-judgement lunch. Relax while judges deliberate.', location: 'Dining Hall' },
 
   { id: 'gap6', emoji: '⏳', name: 'GAP', duration: 1 * 60 * 60, time: '2:00 PM – 3:00 PM', isGap: true },

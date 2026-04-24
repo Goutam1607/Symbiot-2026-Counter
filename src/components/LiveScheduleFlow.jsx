@@ -117,7 +117,7 @@ function FlowNode({ phase, status, index, total, isExpanded, onToggle, phaseRema
                     className="px-2 py-0.5 rounded font-black tracking-wider uppercase dark:bg-gray-500/20 dark:text-gray-400 bg-gray-100 text-gray-500"
                     style={{ fontSize: `${8 * zoom}px` }}
                   >
-                    Coding
+                    Hackathon in Progress
                   </span>
                 )}
               </div>
@@ -248,7 +248,7 @@ export default function LiveScheduleFlow({
             animate={{ opacity: 1, x: 0 }}
           >
             <span className="text-xl">🚀</span>
-            <span className="text-sm font-bold dark:text-gray-300 text-gray-600">Hackathon in Progress…</span>
+            <span className="text-sm font-bold dark:text-gray-300 text-gray-600">Hackathon in Progress</span>
           </motion.div>
         )}
 
